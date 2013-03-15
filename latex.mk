@@ -50,7 +50,7 @@ GREP-makeindex = $(GREP) -F $(MAKEINDEX) $<
 	@$(ECHO) '$@ is created by scanning $^.'
   # texファイルの依存関係
 	@($(ECHO) '$(subst .tex,.dvi,$<) $(subst .tex,.aux,$<) $(subst .tex,.d,$<): $<' >$@)
-  # texファイルの依存関係
+  # Include/Inputファイルの依存関係
 	$(if $(intex),@( \
       $(ECHO); \
       $(ECHO) '# Include/Input Files - tex'; \
@@ -76,7 +76,9 @@ GREP-makeindex = $(GREP) -F $(MAKEINDEX) $<
       $(ECHO) '$(subst .tex,.dvi,$<): $(subst .tex,.ind,$<)') >>$@)
 
 # 変数TARGETSで指定されたターゲットファイルに対応するdファイルをインクルード
-ifdef TARGETS
+# .dファイルからヘッダファイルの依存関係を取得する
+# ターゲットに clean が含まれている場合は除く
+ifeq (,$(filter %clean,$(MAKECMDGOALS)))
   -include $(addsuffix .d,$(basename $(TARGETS)))
 endif
 
