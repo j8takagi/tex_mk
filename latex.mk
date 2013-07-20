@@ -15,7 +15,7 @@ BIBTEX := pbibtex
 MENDEX := mendex
 
 #LaTeXオプション
-interaction ?= batchmode
+interaction ?= nonstopmode
 LATEXFLAG ?=
 DVIPDFMXFLAG ?=
 EXTRACTBBFLAGS ?=
@@ -78,9 +78,9 @@ GREP-makeindex = $(GREP) -F $(MAKEINDEX) $<
 %.d: %.tex
 	@$(ECHO) '$@ is created by scanning $^.'
   # texファイルの依存関係
-	@(($(ECHO) '$(subst .tex,.dvi,$<) $(subst .tex,.aux,$<) $(subst .tex,.d,$<): $<'; \
-       $(ECHO); \
-       $(ECHO) '$(subst .tex,.prev_aux,$<):') >$@)
+	@($(ECHO) '$(subst .tex,.dvi,$<) $(subst .tex,.aux,$<) $(subst .tex,.d,$<): $<' >$@; \
+      $(ECHO); \
+      $(ECHO) '$(subst .tex,.prev_aux,$<):' >>$@)
   # Include/Inputファイルの依存関係
 	$(if $(intex),@( \
       $(ECHO); \
