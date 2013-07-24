@@ -79,7 +79,7 @@ GREP-makeindex = $(GREP) -F $(MAKEINDEX) $<
 	@$(ECHO) '$@ is created by scanning $^.'
   # texファイルの依存関係
 	@($(ECHO) '$(subst .tex,.dvi,$<) $(subst .tex,.aux,$<) $(subst .tex,.d,$<): $<' >$@; \
-      $(ECHO); \
+      $(ECHO) >>$@; \
       $(ECHO) '$(subst .tex,.prev_aux,$<):' >>$@)
   # Include/Inputファイルの依存関係
 	$(if $(intex),@( \
@@ -131,7 +131,7 @@ endif
 # 文献処理用ファイル作成
 # BiBTeXで文献処理するときに使用される
 %.bbl: %.prev_aux
-	$(BIBTEX) $(BIBTEXFLAG) $(subst .prev_aux,aux,$<)
+	$(BIBTEX) $(BIBTEXFLAG) $(subst .prev_aux,.aux,$<)
 
 # バウンディング情報ファイル作成
 # dvipdfmxで図を挿入するときに使用される
