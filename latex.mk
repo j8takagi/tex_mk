@@ -110,10 +110,10 @@ GREP-makeindex = $(GREP) -F $(MAKEINDEX) $<
        $(ECHO); \
        $(ECHO) '$(subst .tex,.dvi,$<): $(subst .tex,.ind,$<)') >>$@)
 
-# 変数TARGETSで指定されたターゲットファイルに対応するdファイルをインクルード
-# .dファイルからヘッダファイルの依存関係を取得する
-# ターゲットに clean が含まれている場合は除く
-ifeq (,$(filter %clean,$(MAKECMDGOALS)))
+# 変数TARGETSで指定されたターゲットファイルに対応する
+# .dファイルをインクルードし、依存関係を取得する
+# ターゲットに %clean、%.xbb、%.d が含まれている場合は除く
+ifeq (,$(filter %clean %.xbb %.d,$(MAKECMDGOALS)))
   -include $(addsuffix .d,$(basename $(TARGETS)))
 endif
 
