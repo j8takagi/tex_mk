@@ -1,5 +1,5 @@
-# texファイルから作成されるpdfまたはdviファイルを
-# ターゲットファイルとして指定
+# TEXTARGETS:
+# texファイルから作成されるpdfまたはdviファイル
 #
 # make および make all でのターゲットファイルになるほか、
 # latex.mkで、ターゲットファイルに対応する依存関係が
@@ -7,11 +7,11 @@
 # また、tex-distcleanの削除対象になる。
 #
 # 初期設定では、ディレクトリにあるすべてのtexファイル
-TARGETS := $(subst .tex,.pdf,$(wildcard *.tex))
+TEXTARGETS := $(subst .tex,.pdf,$(wildcard *.tex))
 
 .PHONY: all clean distclean
 
-all: $(TARGETS)
+all: $(TEXTARGETS)
 
 include latex.mk
 

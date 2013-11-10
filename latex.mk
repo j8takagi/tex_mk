@@ -3,7 +3,7 @@
 #
 # == 使い方 ==
 # 1. texソースファイルと同じディレクトリーに本ファイル（latex.mk）をコピーする
-# 2. Makefileに変数TARGETS と「include latex.mk」を記述する
+# 2. Makefileに変数TEXTARGETS と「include latex.mk」を記述する
 # 3. texソースファイルと同じディレクトリーで、make コマンドを実行する
 #
 # == 機能 ==
@@ -24,9 +24,9 @@
 # - tex-distclean: TeX中間ファイル、バウンディング情報ファイル、ターゲットファイル（PDF、.dvi）を削除
 #
 # === Makefile -- sample ===
-# TARGETS := report.tex
+# TEXTARGETS := report.tex
 #
-# all: $(TARGETS)
+# all: $(TEXTARGETS)
 #
 # include latex.mk
 .PHONY: warning tex-clean tex-distclean
@@ -50,12 +50,12 @@ BIBTEX := pbibtex
 MENDEX := mendex
 
 # TeX中間ファイルの拡張子
-#   .aux: 相互参照用
+#   .aux: 相互参照
 #   .fls: tex -recorderで生成されるファイルリスト
-#   .lof: 図リスト（\tableoffigures）用
-#   .lot: 表リスト（\tableoftables）用
-#   .out: hyperrefパッケージ用
-#   .toc: 目次（\tableofcontents）用
+#   .lof: 図リスト（\tableoffigures）
+#   .lot: 表リスト（\tableoftables）
+#   .out: hyperrefパッケージ
+#   .toc: 目次（\tableofcontents）
 #   .log: ログ
 TEX_INT := .aux .fls .lof .lot .out .toc .log
 # 索引中間ファイルの拡張子
@@ -68,8 +68,19 @@ IND_INT := .idx .ind .ilg
 #   .blg: BiBTeXログ
 BIB_INT := .bbl .blg
 
+.SECONDARY: $(wildcard $(addsuffix $(TEX_INT) $(IND_INT) $(BIB_INT) .d,*))
+
+# \tableofcontents命令
+toc = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\tableofcontents/!s/.*\(\\tableofcontents\).*/\1/p' $<)
+
+# \listoffigures命令
+lof = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoffigures/!s/.*\(\\listoffigures\).*/\1/p' $<)
+
+# \listoftables命令
+lot = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoftables/!s/.*\(\\listoftables\).*/\1/p' $<)
+
 # \makeindex命令
-makeindex = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\makeindex/!s/\\makeindex/&/p' $<)
+makeindex = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\makeindex/!s/.*\(\\makeindex\).*/\1/p' $<)
 
 # \bibliography命令で読み込まれる文献データベースファイル
 bibdb = $(addsuffix .bib,$(basename $(strip $(shell \
@@ -77,36 +88,69 @@ bibdb = $(addsuffix .bib,$(basename $(strip $(shell \
   $(SED) -e 's/.*{\([^}]*\)}.*/\1/' | \
   $(SED) -e 's/,/ /g'))))
 
+# hyperrefパッケージ読み込み
+hyperref = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\usepackage\(\[[^]]*\]\)\{0,1\}{hyperref}/!s/.*\(\\usepackage\)\(\[[^]]*\]\)\{0,1\}\({hyperref}\).*/\1\3/p' $<)
+
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
+
 # .texファイル
 TEXFILE = $(addsuffix .tex,$(BASE))
+
 # .auxファイル
 AUXFILE = $(addsuffix .aux,$(BASE))
 # .prev_auxファイル
 PREV_AUXFILE = $(addsuffix .prev_aux,$(BASE))
+
 # .dviファイル
 DVIFILE = $(addsuffix .dvi,$(BASE))
+
 # .dファイル
 DFILE = $(addsuffix .d,$(BASE))
+
 # .logファイル
 LOGFILE = $(addsuffix .log,$(BASE))
+
+# .tocファイル
+TOCFILE = $(addsuffix .toc,$(BASE))
+# .prev_tocファイル。.tocファイルのコピー
+PREV_TOCFILE = $(addsuffix .prev_toc,$(BASE))
+
+# .lofファイル
+LOFFILE = $(addsuffix .lof,$(BASE))
+# .prev_lofファイル。.lofファイルのコピー
+PREV_LOFFILE = $(addsuffix .prev_lof,$(BASE))
+
+# .lotファイル
+LOTFILE = $(addsuffix .lot,$(BASE))
+# .prev_lotファイル。.lotファイルのコピー
+PREV_LOTFILE = $(addsuffix .prev_lot,$(BASE))
+
 # .idxファイル
 IDXFILE = $(addsuffix .idx,$(BASE))
 # .prev_idxファイル。.idxファイルのコピー
 PREV_IDXFILE = $(addsuffix .prev_idx,$(BASE))
+
 # .indファイル
 INDFILE = $(addsuffix .ind,$(BASE))
 # .prev_indファイル。.indファイルのコピー
 PREV_INDFILE = $(addsuffix .prev_ind,$(BASE))
+
 # .ilgファイル
 ILGFILE = $(addsuffix .ilg,$(BASE))
+
 # .bblファイル
 BBLFILE = $(addsuffix .bbl,$(BASE))
 # .prev_bblファイル。.bblファイルのコピー
 PREV_BBLFILE = $(addsuffix .prev_bbl,$(BASE))
+
 # .bblファイル
 BLGFILE = $(addsuffix .blg,$(BASE))
+
+# .outファイル
+OUTFILE = $(addsuffix .out,$(BASE))
+# .prev_outファイル。.outファイルのコピー
+PREV_OUTFILE = $(addsuffix .prev_out,$(BASE))
 
 #LaTeXオプション
 LATEXFLAG ?=
@@ -119,13 +163,13 @@ MENDEXFLAG ?=
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(TEXFILE)
 COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(CAT) $(LOGFILE); exit 1)
 
-# 索引（.indファイル）作成
+# 索引中間ファイル（.ind）作成
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(IDXFILE)
 COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(ILGFILE); exit 1)
 
-# 文献リスト（.bblファイル）作成
+# 文献リスト中間ファイル（.bbl）作成
 BIBTEXCMD = $(BIBTEX) $(BIBTEXFLAG) $(AUXFILE)
-COMPILE.bbl = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BLGFILE); exit 1)
+COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BLGFILE); exit 1)
 
 # 相互参照未定義の警告
 WARN_UNDEFREF := 'There were undefined references\.'
@@ -138,13 +182,13 @@ WARN_NOFILE = 'No file $(BASE)\.[a-zA-Z0-9]*\.'
 COMPILES.tex = \
   @(for f in 1st 2nd 3rd final; do \
       if test -s $@ -a -s $(LOGFILE); then \
-        $(GREP) -e $(WARN_UNDEFREF) -e $(WARN_NOFILE) $(LOGFILE) || exit 0; \
+        $(GREP) -e $(WARN_UNDEFREF) $(LOGFILE) || exit 0; \
       fi; \
       $(COMPILE.tex); \
     done)
 
 # *.*ファイルと *.prev_*ファイルを比較し、*.*ファイルが更新されている場合はその内容を*.prev_* にコピーする
-CMPPREV = $(CMP) $@ $< && $(ECHO) '$< is up to date.'|| $(CP) -v $< $@
+CMPPREV = $(CMP) $@ $< || $(CP) -v $< $@
 
 # \include、\input命令で読み込まれるtexファイル
 intex = $(addsuffix .tex,$(basename $(strip $(shell \
@@ -162,11 +206,15 @@ ingraphics = $(strip $(shell \
 # TeX、.aux、.dvi、.dファイルの依存関係
 	@($(ECHO) '$(AUXFILE) $(DFILE): $(TEXFILE)'; \
       $(ECHO); \
-      $(ECHO) '$(PREV_AUXFILE): $(AUXFILE)'; \
-      $(ECHO); \
-      $(ECHO) '$(DVIFILE): $(PREV_AUXFILE)' $(if $(makeindex),'$(PREV_INDFILE)') $(if $(bibdb),'$(PREV_BBLFILE)'); \
+      $(ECHO) '$(DVIFILE): $(AUXFILE)' \
+              $(if $(toc),'$(PREV_TOCFILE)') \
+              $(if $(lof),'$(PREV_LOFFILE)') \
+              $(if $(lot),'$(PREV_LOTFILE)') \
+              $(if $(makeindex),'$(PREV_INDFILE)') \
+              $(if $(bibdb),'$(PREV_BBLFILE)') \
+              $(if $(hyperref),'$(PREV_OUTFILE)') \
     ) >$@
-	$(if $(strip $(makeindex) $(bibdb)),@( \
+	$(if $(strip $(toc) $(lof) $(lot) $(makeindex) $(bibdb) $(hyperref)),@( \
       $(ECHO) '	@$$(COMPILE.tex)'; \
       $(ECHO) '	@$$(COMPILES.tex)'; \
     ) >>$@)
@@ -205,11 +253,11 @@ ingraphics = $(strip $(shell \
         $(ECHO) '$(PREV_BBLFILE): $(BBLFILE)'; \
     ) >>$@)
 
-# 変数TARGETSで指定されたターゲットファイルに対応する
+# 変数TEXTARGETSで指定されたターゲットファイルに対応する
 # .dファイルをインクルードし、依存関係を取得する
 # ターゲットに %clean、%.xbb、%.d が含まれている場合は除く
 ifeq (,$(filter %clean %.xbb %.d,$(MAKECMDGOALS)))
-  -include $(addsuffix .d,$(basename $(TARGETS)))
+  -include $(addsuffix .d,$(basename $(TEXTARGETS)))
 endif
 
 # auxファイル作成
@@ -221,7 +269,7 @@ endif
 	@$(CMPPREV)
 
 # dviファイル作成
-%.dvi: %.prev_aux
+%.dvi: %.aux
 	$(COMPILES.tex)
 
 # PDFファイル作成
@@ -242,8 +290,36 @@ endif
 %.xbb: %.png
 	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
 
-# 索引ファイル作成
-%.idx: %.tex
+# 目次中間ファイル作成
+%.toc: %.prev_aux
+	@$(COMPILE.tex)
+
+%.prev_toc: %.toc
+	@$(CMPPREV)
+
+# 図リスト中間ファイル作成
+%.lof: %.prev_aux
+	@$(COMPILE.tex)
+
+%.prev_lof: %.lof
+	@$(CMPPREV)
+
+# 表リスト中間ファイル作成
+%.lot: %.prev_aux
+	@$(COMPILE.tex)
+
+%.prev_lot: %.lot
+	@$(CMPPREV)
+
+# hyperrefパッケージ中間ファイル作成
+%.lot: %.prev_aux
+	@$(COMPILE.tex)
+
+%.prev_lot: %.lot
+	@$(CMPPREV)
+
+# 索引中間ファイル作成
+%.idx: %.prev_aux
 	@$(COMPILE.tex)
 
 %.prev_idx: %.idx
@@ -255,17 +331,31 @@ endif
 %.prev_ind: %.ind
 	@$(CMPPREV)
 
-# 文献処理用ファイル作成
+# BiBTeX中間ファイル作成
 %.bbl: %.prev_aux
-	@$(COMPILE.bbl)
+	@$(COMPILE.bib)
 
 %.prev_bbl: %.bbl
 	@$(CMPPREV)
 
+# hyperref中間ファイル作成
+%.out: %.prev_aux
+	@$(COMPILE.out)
+
+%.prev_out: %.out
+	@$(CMPPREV)
+
+%.dvi: %.prev_out
+	@$(COMPILE.tex)
+
 # tex-cleanターゲット
 tex-clean:
-	$(RM) $(addprefix *,$(TEX_INT) $(IND_INT) $(BIB_INT) .d .prev_aux .prev_idx .prev_ind .prev_bbl)
-ifeq (,$(filter %.dvi,$(TARGETS)))
+	$(RM) $(addprefix *, \
+      $(TEX_INT) $(IND_INT) $(BIB_INT) .d \
+      .prev_aux .prev_toc .prev_lof .prev_lot \
+      .prev_idx .prev_ind .prev_bbl .prev_out \
+    )
+ifeq (,$(filter %.dvi,$(TEXTARGETS)))
 	$(RM) *.dvi
 endif
 
@@ -275,7 +365,7 @@ xbb-clean:
 
 # tex-distcleanターゲット
 tex-distclean: tex-clean xbb-clean
-ifneq (,$(filter %.dvi,$(TARGETS)))
+ifneq (,$(filter %.dvi,$(TEXTARGETS)))
 	$(RM) *.dvi
 endif
-	$(RM) $(TARGETS)
+	$(RM) $(TEXTARGETS)
