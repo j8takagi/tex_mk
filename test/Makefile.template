@@ -1,0 +1,10 @@
+TARGETS := $(subst .tex,.pdf,$(wildcard *.tex))
+
+all: $(TARGETS)
+
+include latex.mk
+
+clean: tex-clean
+	$(RM) *.bak
+
+distclean: clean tex-distclean
