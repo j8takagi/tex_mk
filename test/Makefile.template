@@ -1,6 +1,6 @@
-TARGETS := $(subst .tex,.pdf,$(wildcard *.tex))
+TEXTARGETS := $(subst .tex,.pdf,$(wildcard *.tex))
 
-all: $(TARGETS)
+all: $(TEXTARGETS)
 
 include latex.mk
 
