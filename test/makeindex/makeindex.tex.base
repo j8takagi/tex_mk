@@ -1,0 +1,10 @@
+\documentclass{jsarticle}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+ピッツィカート\index{ピッツィカート}すべき個所の指定は、
+楽譜の上ではpizz\index{pizz}と書かれ、
+またもとどおりに弓\index{ゆみ@弓}を引く個所に、
+イタリア語でacro\index{acro}（弓）と書くことになっています。
+\printindex
+\end{document}

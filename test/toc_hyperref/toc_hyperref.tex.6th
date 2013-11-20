@@ -6,6 +6,8 @@
 \frontmatter
 \chapter{序}
 
+\tableofcontents
+
 \mainmatter
 \chapter{\TeX とその仲間}
 

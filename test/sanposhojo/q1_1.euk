@@ -1,0 +1,21 @@
+box -2,-2,18,8
+A B C triangle 13,5,12
+circum = circle(A, B, C)
+D = center(circum)
+crcl1 = incircle(A, B, C)
+E = center(crcl1)
+F = intersection(line(A.C), perpendicular(line(A.C), D))
+G = point(circum, arg(line(D.F)):)
+H = midpoint(F.G)
+crcl2 = circle(H, radius(crcl1))
+draw
+  (A.B.C)
+  circum 0: 180:
+  crcl1; crcl2
+  A; B; C; D; E; F; G; H
+end
+
+label
+  A, C, B right
+  A -90:; B -90:; C 0:; D -90:; E -90:; F 90:; G 90:; H 0:
+end

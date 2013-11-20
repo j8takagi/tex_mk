@@ -1,0 +1,35 @@
+box -2,-2,18,8
+A B C triangle 13,5,12
+c1 = circle(A, B, C)
+D = center(c1)
+c2 = incircle(A, B, C)
+E = center(c2)
+F = intersection(line(A.C), perpendicular(line(A.C), D))
+G = point(circle(A, B, C), arg(line(D.F)):)
+H = midpoint(F.G)
+c3 = circle(H, radius(incircle(A, B, C)))
+
+I = projection(E, line(A.B))
+J = projection(E, line(B.C))
+K = projection(E, line(C.A))
+draw
+  (A.B.C)
+  c1 0: 180:
+  c2
+  c3
+  D.G dashed
+  E.I dashed
+  E.J dashed
+  E.K dashed
+  A; B; C; D; E; F; G; H; I; J; K
+end
+
+label
+  A, C, B right
+  A -90:; B -90:; C 0:; D -90:; E -45:; F -30:; G 90:; H 0:; I -90:; J 0:; K 90:
+  E, I, B right
+  E, J, C right
+  E, K, A right
+  D, F, A right
+  B, A, C double
+end

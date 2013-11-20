@@ -1,7 +1,7 @@
 \documentclass{jsbook}
+\usepackage[dvipdfm,pdftitle={LaTeX2e美文書作成入門}]{hyperref}
+\usepackage{pxjahyper}
 \begin{document}
-
-\tableofcontents
 
 \chapter{\TeX って何？}
 

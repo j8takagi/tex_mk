@@ -1,0 +1,16 @@
+box -2, -2, 18, 8
+A B C triangle 13, 5, 12
+c1 = circle(A, B, C)
+D = center(c1)
+c2 = incircle(A, B, C)
+E = center(c2)
+F = intersection(line(A.C), perpendicular(line(A.C), D))
+G = point(circle(A, B, C), arg(line(D.F)):)
+H = midpoint(F.G)
+c3 = circle(H, radius(incircle(A, B, C)))
+draw
+  (A.B.C)
+  c1 0: 180:
+  c2
+  c3
+end

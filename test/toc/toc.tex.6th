@@ -1,10 +1,10 @@
 \documentclass{jsbook}
-\usepackage[dvipdfm,pdftitle={LaTeX2e美文書作成入門}]{hyperref}
-\usepackage{pxjahyper}
 \begin{document}
 
 \frontmatter
 \chapter{序}
+
+\tableofcontents
 
 \mainmatter
 \chapter{\TeX とその仲間}
