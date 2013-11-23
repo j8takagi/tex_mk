@@ -70,25 +70,25 @@ BIB_INT := .bbl .blg
 
 .SECONDARY: $(wildcard $(addsuffix $(TEX_INT) $(IND_INT) $(BIB_INT) .d,*))
 
-# \tableofcontents命令
+# \tableofcontents命令をTeXファイルから検索する
 toc = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\tableofcontents/!s/.*\(\\tableofcontents\).*/\1/p' $<)
 
-# \listoffigures命令
+# \listoffigures命令をTeXファイルから検索する
 lof = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoffigures/!s/.*\(\\listoffigures\).*/\1/p' $<)
 
-# \listoftables命令
+# \listoftables命令をTeXファイルから検索する
 lot = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoftables/!s/.*\(\\listoftables\).*/\1/p' $<)
 
-# \makeindex命令
+# \makeindex命令をTeXファイルから検索する
 makeindex = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\makeindex/!s/.*\(\\makeindex\).*/\1/p' $<)
 
-# \bibliography命令で読み込まれる文献データベースファイル
+# \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
 bibdb = $(addsuffix .bib,$(basename $(strip $(shell \
   $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\bibliography/!s/\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}/&\n/p' $< $(intex) | \
   $(SED) -e 's/.*{\([^}]*\)}.*/\1/' | \
   $(SED) -e 's/,/ /g'))))
 
-# hyperrefパッケージ読み込み
+# hyperrefパッケージ読み込みをTeXファイルから検索する
 hyperref = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\usepackage\(\[[^]]*\]\)\{0,1\}{hyperref}/!s/.*\(\\usepackage\)\(\[[^]]*\]\)\{0,1\}\({hyperref}\).*/\1\3/p' $<)
 
 # ファイル名から拡張子を除いた部分
@@ -174,6 +174,10 @@ MENDEXFLAG ?=
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(TEXFILE)
 COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(CAT) $(LOGFILE); exit 1)
 
+# DVI -> PDF
+DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(DVIFILE)
+COMPILE.dvi = $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) 2>&1 | $(CAT) >>$(LOGFILE) || $(CAT)
+
 # 索引中間ファイル（.ind）作成
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(IDXFILE)
 COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(ILGFILE); exit 1)
@@ -217,30 +221,31 @@ ingraphics = $(strip $(shell \
 	@$(ECHO) '$(DFILE): $(TEXFILE)' >$@
 	$(if $(INTERFILES),@( \
         $(ECHO); \
-        $(ECHO) '$(DVIFILE): $(TEXFILE)'; \
-        $(ECHO) '	@$$(MAKE) -s $(INTERFILES_PREV)'; \
+        $(ECHO) '$(DVIFILE):: $(INTERFILES_PREV)'; \
         $(ECHO) '	@$$(COMPILE.tex)'; \
+        $(ECHO); \
+        $(ECHO) '$(DVIFILE):: $(AUXFILE)'; \
         $(ECHO) '	@$$(COMPILES.tex)'; \
     )  >>$@)
 # 画像ファイルの依存関係
 	$(if $(ingraphics),@( \
         $(ECHO); \
         $(ECHO) '# IncludeGraphic Files - .pdf, .jpeg/.jpg, .png with .xbb'; \
-        $(ECHO) '$(DVIFILE) $(AUXFILE) $(INTERFILES): $(ingraphics)'; \
+        $(ECHO) '$(AUXFILE) $(INTERFILES): $(ingraphics)'; \
         $(ECHO); \
-        $(ECHO) '$(strip $(DVIFILE) $(AUXFILE) $(INTERFILES)): $(addsuffix .xbb,$(basename $(filter-out %.eps,$(ingraphics))))'; \
+        $(ECHO) '$(strip $(AUXFILE) $(INTERFILES)): $(addsuffix .xbb,$(basename $(filter-out %.eps,$(ingraphics))))'; \
     ) >>$@)
 # \includeまたは\input命令で読み込まれるTeXファイルの依存関係
 	$(if $(intex),@( \
         $(ECHO); \
         $(ECHO) '# Files called from \include or \input - .tex'; \
-        $(ECHO) '$(strip $(DVIFILE) $(AUXFILE) $(INTERFILES)): $(intex)'; \
+        $(ECHO) '$(strip $(AUXFILE) $(INTERFILES)): $(intex)'; \
     ) >>$@)
 # 文献処理用ファイルの依存関係
 	$(if $(bibdb),@( \
         $(ECHO); \
         $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
-        $(ECHO) '$(BBLFILE): $(bibdb) $(AUXFILE)'; \
+        $(ECHO) '$(BBLFILE): $(bibdb) $(TEXFILE)'; \
         $(ECHO); \
         $(ECHO) '$(BBLFILE_PREV): $(BBLFILE)'; \
     ) >>$@)
@@ -256,12 +261,11 @@ endif
 %.aux: %.tex
 	@$(COMPILE.tex)
 
-%.dvi: %.tex
-	@$(COMPILE.tex)
+%.dvi: %.aux
 	@$(COMPILES.tex)
 
-%.dvi: %.aux
-	$(if $(filter-out aux,$(NOFILES)),@$(COMPILE.tex))
+%.dvi: %.tex
+	@$(COMPILE.tex)
 	@$(COMPILES.tex)
 
 # aux_prevファイル作成
@@ -270,7 +274,7 @@ endif
 
 # PDFファイル作成
 %.pdf: %.dvi
-	$(DVIPDFMX) $(DVIPDFMXFLAG) $<
+	@$(COMPILE.dvi)
 
 # バウンディング情報ファイル作成
 # pdf、jpeg/jpg、pngファイルに対応
@@ -288,28 +292,28 @@ endif
 
 # 目次中間ファイル作成
 %.toc: %.tex
-	@$(COMPILE.tex)
+	@$(MAKE) -s $(AUXFILE)
 
 %.toc_prev: %.toc
 	@$(CMPPREV)
 
 # 図リスト中間ファイル作成
 %.lof: %.tex
-	@$(COMPILE.tex)
+	@$(MAKE) -s $(AUXFILE)
 
 %.lof_prev: %.lof
 	@$(CMPPREV)
 
 # 表リスト中間ファイル作成
 %.lot: %.tex
-	@$(COMPILE.tex)
+	@$(MAKE) -s $(AUXFILE)
 
 %.lot_prev: %.lot
 	@$(CMPPREV)
 
 # 索引中間ファイル作成
 %.idx: %.tex
-	@$(COMPILE.tex)
+	@$(MAKE) -s $(AUXFILE)
 
 %.idx_prev: %.idx
 	@$(CMPPREV)
@@ -322,6 +326,7 @@ endif
 
 # BiBTeX中間ファイル作成
 %.bbl: %.tex
+	@$(MAKE) -s $(AUXFILE)
 	@$(COMPILE.bib)
 
 %.bbl_prev: %.bbl
@@ -329,7 +334,7 @@ endif
 
 # hyperref中間ファイル作成
 %.out: %.tex
-	@$(COMPILE.tex)
+	@$(MAKE) -s $(AUXFILE)
 
 %.out_prev: %.out
 	@$(CMPPREV)
