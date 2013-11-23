@@ -6,6 +6,6 @@ all: $(TEXTARGETS)
 
 include latex.mk eukleides.mk
 
-distclean: tex-distclean  eukleides-distclean
+distclean: tex-distclean eukleides-distclean
 
 clean: tex-clean eukleides-clean

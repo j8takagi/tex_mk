@@ -3,6 +3,8 @@ EPSTOPDF = epstopdf
 # ImageMagick
 CONVERT = convert
 
+eukfiles = $(wildcard *.euk)
+
 %.eps: %.euk
 	$(EUKLEIDES) $<
 
@@ -15,8 +17,11 @@ CONVERT = convert
 %.jpeg: %.eps
 	$(CONVERT) $< $@
 
-eukleides-clean:
-	$(RM) $(subst .euk,.png,*.eps)
+%.jpg: %.eps
+	$(CONVERT) $< $@
 
-eukleides-distclean:
-	$(RM) $(subst .euk,.pdf,*.euk) $(subst .euk,.png,*.euk) $(subst .euk,.jpeg,*.euk)
+eukleides-clean:
+	$(if $(eukfiles),$(RM) $(subst .euk,.eps,$(eukfiles)))
+
+eukleides-distclean: eukleides-clean
+	$(if $(eukfiles), $(RM) $(subst .euk,.pdf,$(eukfiles)) $(subst .euk,.png,$(eukfiles)) $(subst .euk,.jpeg,$(eukfiles)) $(subst .euk,.jpg,$(eukfiles)))

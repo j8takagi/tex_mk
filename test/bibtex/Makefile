@@ -1,4 +1,4 @@
-.PHONY: all bib-update bib-rebase tex-update rebase clean distclean
+.PHONY: all bib-update bib-rebase body-update rebase clean distclean
 
 CAT := cat
 CMP := cmp -s
@@ -10,7 +10,7 @@ all: $(TEXTARGETS)
 
 include latex.mk
 
-rebase: bib-rebase tex-rebase
+rebase: bib-rebase body-rebase
 
 bib-update: bib-rebase
 	$(CAT) jpnbook_add.bib >>jpnbook.bib
@@ -18,10 +18,10 @@ bib-update: bib-rebase
 bib-rebase:
 	$(CMP) jpnbook.bib.base jpnbook.bib || $(CP) jpnbook.bib.base jpnbook.bib
 
-tex-update: tex-rebase
+body-update: body-rebase
 	$(SED) -i s/bibtexのテスト。/bibtexのテスト。本文だけ変更。/ bibtex.tex
 
-tex-rebase:
+body-rebase:
 	$(CMP) bibtex.tex.base bibtex.tex || $(CP) bibtex.tex.base bibtex.tex
 
 clean: tex-clean
