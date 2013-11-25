@@ -1,20 +1,40 @@
 TEXTARGETS := toc.pdf
 
-.PHONY: all toc-update rebase clean distclean
+CMP := cmp -s
+DIFF := diff
+PATCH := patch
 
-all: $(TEXTARGETS)
+.PHONY: all update rebase clean distclean
 
-toc-update:
-	$(CP) toc.tex.6th toc.tex
+all:
+	@$(MAKE) -s toc_1.pdf
+	@$(ECHO) '--------------------'
+	@$(MAKE) -s toc_2.pdf
 
-body-update:
-	$(CP) toc.tex.5th_add toc.tex
+toc_1.pdf: rebase
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s toc.pdf
+	@$(CP) -v toc.pdf $@
+
+toc_2.pdf: update
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s toc.pdf
+	@$(CP) -v toc.pdf $@
+
+update: toc.tex.6th.patch
+	@$(PATCH) <$<
+
+toc.tex.6th.patch:
+	@$(MAKE) -s rebase
+	@$(DIFF) -u toc.tex toc.tex.6th >$@ || exit 0
 
 rebase:
-	$(CP) toc.tex.5th toc.tex
+	$(CMP) toc.tex.5th toc.tex || $(CP) -v toc.tex.5th toc.tex
 
 include latex.mk
 
 clean: tex-clean
 
-distclean: tex-distclean rebase
+distclean: rebase tex-distclean
+	$(RM) *.patch
+	$(RM) toc_*.pdf

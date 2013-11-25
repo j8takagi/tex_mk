@@ -1,20 +1,40 @@
 TEXTARGETS := toc_hyperref.pdf
 
-.PHONY: all toc-update body-update rebase clean distclean
+CMP := cmp -s
+DIFF := diff
+PATCH := patch
 
-all: $(TEXTARGETS)
+.PHONY: all update rebase clean distclean
 
-toc-update:
-	$(CP) toc_hyperref.tex.6th toc_hyperref.tex
+all:
+	@$(MAKE) -s toc_hyperref_1.pdf
+	@$(ECHO) '--------------------'
+	@$(MAKE) -s toc_hyperref_2.pdf
 
-body-update:
-	$(CP) toc_hyperref.tex.5th_add toc_hyperref.tex
+toc_hyperref_1.pdf: rebase
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s toc_hyperref.pdf
+	@$(CP) -v toc_hyperref.pdf $@
+
+toc_hyperref_2.pdf: update
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s toc_hyperref.pdf
+	@$(CP) -v toc_hyperref.pdf $@
+
+update: toc_hyperref.tex.6th.patch
+	@$(PATCH) <$<
+
+toc_hyperref.tex.6th.patch:
+	@$(MAKE) -s rebase
+	@$(DIFF) -u toc_hyperref.tex toc_hyperref.tex.6th >$@ || exit 0
 
 rebase:
-	$(CP) toc_hyperref.tex.5th toc_hyperref.tex
+	$(CMP) toc_hyperref.tex.5th toc_hyperref.tex || $(CP) -v toc_hyperref.tex.5th toc_hyperref.tex
 
 include latex.mk
 
 clean: tex-clean
 
-distclean: tex-distclean rebase
+distclean: rebase tex-distclean
+	$(RM) *.patch
+	$(RM) toc_hyperref_*.pdf

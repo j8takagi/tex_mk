@@ -1,17 +1,40 @@
 TEXTARGETS := hyperref.pdf
 
+CMP := cmp -s
+DIFF := diff
+PATCH := patch
+
 .PHONY: all update rebase clean distclean
 
-all: $(TEXTARGETS)
+all:
+	@$(MAKE) -s hyperref_1.pdf
+	@$(ECHO) '--------------------'
+	@$(MAKE) -s hyperref_2.pdf
 
-update:
-	$(CP) hyperref.tex.6th hyperref.tex
+hyperref_1.pdf: rebase
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s hyperref.pdf
+	@$(CP) -v hyperref.pdf $@
+
+hyperref_2.pdf: update
+	@$(ECHO) '---------- $@: $^ ----------'
+	@$(MAKE) -s hyperref.pdf
+	@$(CP) -v hyperref.pdf $@
+
+update: hyperref.tex.6th.patch
+	@$(PATCH) <$<
+
+hyperref.tex.6th.patch:
+	@$(MAKE) -s rebase
+	@$(DIFF) -u hyperref.tex hyperref.tex.6th >$@ || exit 0
 
 rebase:
-	$(CP) hyperref.tex.5th hyperref.tex
+	$(CMP) hyperref.tex.5th hyperref.tex || $(CP) -v hyperref.tex.5th hyperref.tex
 
 include latex.mk
 
 clean: tex-clean
 
-distclean: tex-distclean
+distclean: rebase tex-distclean
+	$(RM) *.patch
+	$(RM) hyperref_*.pdf
