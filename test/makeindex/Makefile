@@ -40,5 +40,5 @@ include latex.mk
 
 clean: tex-clean
 
-distclean: clean tex-distclean
+distclean: rebase clean tex-distclean
 	$(RM) makeindex_*.pdf
