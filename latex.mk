@@ -57,6 +57,9 @@ MENDEXFLAG ?=
 tex-warning:
 	@$(ECHO) "check current directory, or set TEXTARGET in Makefile."
 
+# ファイル名から拡張子を除いた部分
+BASE = $(basename $<)
+
 # TeX中間ファイルの拡張子
 #   .aux: 相互参照
 #   .fls: tex -recorderで生成されるファイルリスト
@@ -81,40 +84,100 @@ ALL_INTERFILES = $(addprefix *,$(TEX_INT) $(IND_INT) $(BIB_INT) .d .*_prev)
 .SECONDARY: $(wildcard ALL_INTERFILES)
 
 # \tableofcontents命令をTeXファイルから検索する
-toc = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\tableofcontents/!s/.*\(\\tableofcontents\).*/\1/p' $< $(intex))
+toc = \
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/.*\(\\tableofcontents\)/\1/p' \
+  )
 
 # \listoffigures命令をTeXファイルから検索する
-lof = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoffigures/!s/.*\(\\listoffigures\).*/\1/p' $< $(intex))
+lof = \
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/.*\(\\listoffigures\)/\1/p' \
+  )
 
 # \listoftables命令をTeXファイルから検索する
-lot = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\listoftables/!s/.*\(\\listoftables\).*/\1/p' $< $(intex))
+lot = \
+  $(shell \
+     $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+     $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+     $(SED) -n -e 's/.*\(\\listoftables\)/\1/p' \
+   )
 
 # \makeindex命令をTeXファイルから検索する
-makeindex = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\makeindex/!s/.*\(\\makeindex\).*/\1/p' $< $(intex))
+makeindex = \
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/.*\(\\makeindex\)/\1/p' \
+  )
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
-bibdb = $(addsuffix .bib,$(basename $(strip $(shell \
-  $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\bibliography/!s/\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}/&\n/p' $< $(intex) | \
-  $(SED) -e 's/.*{\([^}]*\)}.*/\1/' | \
-  $(SED) -e 's/,/ /g'))))
+bibdb = \
+  $(addsuffix .bib,$(basename $(strip $(shell \
+     $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+     $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+     $(SED) -n -e 's/\\bibliography\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
+     $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' | \
+     $(SED) -e 's/,/ /g' \
+   ))))
 
 # hyperrefパッケージ読み込みをTeXファイルから検索する
-hyperref = $(shell $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\usepackage\(\[[^]]*\]\)\{0,1\}{hyperref}/!s/.*\(\\usepackage\)\(\[[^]]*\]\)\{0,1\}\({hyperref}\).*/\1\3/p' $< $(intex))
-
-# ファイル名から拡張子を除いた部分
-BASE = $(basename $<)
+hyperref = \
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/.*\(\\usepackage\(\[[^]]*\]\)\{0,1\}{hyperref}\)/\1/p'\
+  )
 
 # $(BASE).texで使われるLaTeX中間ファイル
-INTERFILES = $(strip \
-                $(if $(toc),$(BASE).toc) \
-                $(if $(lof),$(BASE).lof) \
-                $(if $(lot),$(BASE).lot) \
-                $(if $(makeindex),$(BASE).ind) \
-                $(if $(bibdb),$(BASE).bbl) \
-                $(if $(hyperref),$(BASE).out) \
-              )
+INTERFILES = \
+  $(strip \
+    $(if $(toc),$(BASE).toc) \
+    $(if $(lof),$(BASE).lof) \
+    $(if $(lot),$(BASE).lot) \
+    $(if $(makeindex),$(BASE).ind) \
+    $(if $(bibdb),$(BASE).bbl) \
+    $(if $(hyperref),$(BASE).out) \
+  )
 
 INTERFILES_PREV = $(addsuffix _prev,$(INTERFILES))
+
+# \include命令で読み込まれるTeXファイル
+includetex = \
+  $(strip $(addsuffix .tex,$(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/\\include\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
+    $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' \
+  )))
+
+# \input命令で読み込まれるTeXファイル
+define get_inputtex
+  $(strip $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $1 | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/\\input\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
+    $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' \
+  ))
+endef
+
+inputtex = $(call get_inputtex,$(BASE).tex $(includetex))
+
+# \include命令または\input命令で読み込まれるTeXファイル
+intex = $(strip $(includetex) $(inputtex))
+
+# \includegraphics命令で読み込まれるグラフィックファイル
+ingraphics = \
+  $(strip $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(intex) | \
+    $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+    $(SED) -n -e 's/\\includegraphics\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
+    $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' \
+  ))
 
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
@@ -125,7 +188,7 @@ WARN_UNDEFREF := 'There were undefined references\.'
 
 # LaTeX処理
 # ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
-CNT = 3
+CNT := 3
 COMPILES.tex = \
   @(for i in `$(SEQ) 1 $(CNT)`; do \
       if test -s $@ -a -s $(BASE).log; then \
@@ -152,53 +215,42 @@ COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 # ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
 CMPPREV = $(CMP) $@ $< || $(CP) -p -v $< $@
 
-# \include、\input命令で読み込まれるTeXファイル
-intex = $(addsuffix .tex,$(basename $(strip $(shell \
-  $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\\(include\|input\)/!s/\\\(include\|input\)\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/p' $< | \
-  $(SED) -e 's/.*{\([^}]*\)}.*/\1/'))))
-
-# \includegraphics命令で読み込まれるグラフィックファイル
-ingraphics = $(strip $(shell \
-  $(SED) -n -e '/^.*[^\]\{0,1\}%.*\\includegraphics/!s/\\includegraphics\(\[[^]]*\]\)\{0,1\}\({[^}]*}\)/&\n/p' $< $(intex) | \
-  $(SED) -e 's/.*{\([^}]*\)}.*/\1/'))
-
 # 依存関係を.dファイルに書き出す
 %.d: %.tex
-	@$(ECHO) '$@ is created by scanning $^.'
+	@$(ECHO) '$@ is created by scanning $<.'
 # .dファイルの依存関係
 	@$(ECHO) '$(BASE).d: $(BASE).tex' >$@
 # 中間ファイルの依存関係
 	$(if $(INTERFILES),@( \
-        $(ECHO); \
-        $(ECHO) '# LaTeX Intermediate Files'; \
-        $(ECHO) '$(BASE).dvi:: $(INTERFILES_PREV)'; \
-        $(ECHO) '	@$$(COMPILE.tex)'; \
-        $(ECHO); \
-        $(ECHO) '$(BASE).dvi:: $(BASE).aux'; \
-        $(ECHO) '	@$$(COMPILES.tex)'; \
-      )  >>$@)
+      $(ECHO); \
+      $(ECHO) '# LaTeX Intermediate Files'; \
+      $(ECHO) '$(BASE).dvi:: $(INTERFILES_PREV)'; \
+      $(ECHO) '	@$$(COMPILE.tex)'; \
+      $(ECHO); \
+      $(ECHO) '$(BASE).dvi:: $(BASE).aux'; \
+      $(ECHO) '	@$$(COMPILES.tex)'; \
+    ) >>$@)
 # 画像ファイルの依存関係
 	$(if $(ingraphics),@( \
+      $(ECHO); \
+      $(ECHO) '# IncludeGraphic Files - .pdf, .eps, .jpeg/.jpg, .png'; \
+      $(ECHO) '#           .xbb Files - .pdf, .jpeg/.jpg, .png'; \
+      $(ECHO) '$(BASE).aux: $(ingraphics)'; \
+      $(if $(filter-out %.eps,$(ingraphics)), \
         $(ECHO); \
-        $(ECHO) '# IncludeGraphic Files - .pdf, .eps, .jpeg/.jpg, .png'; \
-        $(ECHO) '#           .xbb Files - .pdf, .jpeg/.jpg, .png'; \
-        $(ECHO) '$(BASE).aux: $(ingraphics)'; \
-        $(if $(filter-out %.eps,$(ingraphics)), \
-          $(ECHO); \
-          $(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(ingraphics))))'; \
-        ) \
-      ) >>$@)
-# \includeまたは\input命令で読み込まれるTeXファイルの依存関係
+        $(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(ingraphics))))'; \
+      ) \
+    ) >>$@)
 	$(if $(intex),@( \
-        $(ECHO); \
-        $(ECHO) '# Files called from \include or \input - .tex'; \
-        $(ECHO) '$(BASE).aux: $(intex)'; \
-      ) >>$@)
+      $(ECHO); \
+      $(ECHO) '# Files called from \include or \input - .tex'; \
+      $(ECHO) '$(BASE).aux: $(intex)'; \
+    ) >>$@)
 # 文献処理用ファイルの依存関係
 	$(if $(bibdb),@( \
-        $(ECHO); \
-        $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
-        $(ECHO) '$(BASE).bbl: $(bibdb) $(BASE).tex'; \
+      $(ECHO); \
+      $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
+      $(ECHO) '$(BASE).bbl: $(bibdb) $(BASE).tex'; \
     ) >>$@)
 
 # 変数TEXTARGETSで指定されたターゲットファイルに対応する
