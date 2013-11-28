@@ -6,6 +6,8 @@ CMP := cmp -s
 CP := cp
 CONVERT := convert
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s graphics_pdf_1.pdf
 	@$(ECHO) '--------------------'

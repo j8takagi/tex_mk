@@ -6,6 +6,8 @@ PATCH := patch
 
 .PHONY: all update rebase clean distclean
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s hyperref_1.pdf
 	@$(ECHO) '--------------------'

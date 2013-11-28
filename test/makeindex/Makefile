@@ -5,6 +5,8 @@ TEXTARGETS := makeindex.pdf
 CMP := cmp -s
 SED := sed
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s makeindex_1.pdf
 	@$(ECHO) '--------------------'

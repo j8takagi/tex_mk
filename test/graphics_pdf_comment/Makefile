@@ -6,6 +6,8 @@ CMP := cmp -s
 CP := cp
 CONVERT := convert
 
+$(TEXTARGETS):
+
 all: graphics_pdf.pdf
 
 include latex.mk

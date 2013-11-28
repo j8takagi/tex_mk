@@ -6,6 +6,8 @@ PATCH := patch
 
 .PHONY: all update rebase clean distclean
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s toc_1.pdf
 	@$(ECHO) '--------------------'

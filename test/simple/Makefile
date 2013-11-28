@@ -5,6 +5,8 @@ SED := sed
 
 .PHONY: all update rebase clean distclean
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s simple_1.pdf
 	@$(ECHO) '--------------------'

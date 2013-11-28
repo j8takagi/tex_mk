@@ -6,6 +6,8 @@ SED := sed
 
 TEXTARGETS := bibtex.pdf
 
+$(TEXTARGETS):
+
 all:
 	@$(MAKE) -s bibtex_1.pdf
 	@$(ECHO) '--------------------'
