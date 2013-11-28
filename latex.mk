@@ -186,19 +186,21 @@ CMPPREV = $(CMP) $@ $< || $(CP) -p -v $< $@
 # 依存関係を.dファイルに書き出す
 %.d: %.fls_prev
 	@$(ECHO) '$@ is created by scanning $(subst _prev,,$^).'
-# .dファイルの依存関係
+    # .dファイルの依存関係
 	@$(ECHO) '$(BASE).d: $(BASE).fls_prev' >$@
+    # \includeまたは\input命令で読み込まれるTeXファイルの依存関係
 	$(if $(TEXFILES),@( \
       $(ECHO); \
       $(ECHO) '# Files called from \include or \input - .tex'; \
       $(ECHO) '$(BASE).aux: $(TEXFILES)'; \
     ) >>$@)
+    # そのほかのファイル（TEXMFROOT以外にあるスタイルファイルなど）の依存関係
 	$(if $(OTHERFILES),@( \
       $(ECHO); \
       $(ECHO) '# Files other'; \
       $(ECHO) '$(BASE).aux: $(OTHERFILES)'; \
     ) >>$@)
-# 画像ファイルの依存関係
+    # 画像ファイルの依存関係
 	$(if $(GRAPHICFILES),@( \
       $(ECHO); \
       $(ECHO) '# IncludeGraphic Files - .pdf, .eps, .jpeg/.jpg, .png'; \
@@ -209,13 +211,13 @@ CMPPREV = $(CMP) $@ $< || $(CP) -p -v $< $@
         $(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'; \
       ) \
     ) >>$@)
-# 文献処理用ファイルの依存関係
+    # 文献処理用ファイルの依存関係
 	$(if $(bibdb),@( \
         $(ECHO); \
         $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
         $(ECHO) '$(BASE).bbl: $(bibdb) $(BASE).tex'; \
       ) >>$@)
-# 中間ファイルの依存関係
+    # 中間ファイルの依存関係
 	$(if $(strip $(INTERFILES) $(bibdb)),@( \
       $(ECHO); \
       $(ECHO) '# LaTeX Intermediate Files'; \
