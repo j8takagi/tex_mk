@@ -29,6 +29,10 @@
 # all: $(TEXTARGETS)
 #
 # include latex.mk
+
+#debug
+#SHELL = /bin/sh -x
+
 .PHONY: tex-warning tex-clean tex-distclean
 
 # シェルコマンド
