@@ -134,10 +134,8 @@ GRAPHICFILESre =  $(eval GRAPHICFILES := \
   ))
 
 # そのほかの読み込みファイル
-OTHERFILES = $(OTHERFILESre)
-
-OTHERFILESre = $(eval OTHERFILES := \
-  $(sort $(filter-out %.aux $(INTERFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES))))
+OTHERFILES = \
+  $(sort $(filter-out %.aux $(INTERFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
 BIBDB = $(BIBDBre)
