@@ -151,7 +151,7 @@ BIBDBre = $(eval BIBDB := \
 
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
-COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).log; exit 1)
+COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log; exit 1)
 
 FLSCMD = $(LATEX) -interaction=nonstopmode -recorder $(BASE).tex
 CREATE.fls = \
