@@ -65,33 +65,34 @@ tex-warning:
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
 
-# TeX中間ファイルの拡張子
-#   .aux: 相互参照
-#   .fls: tex -recorderで生成されるファイルリスト
+# .aux、.fls以外のTeX中間ファイルの拡張子
 #   .lof: 図リスト（\tableoffigures）
 #   .lot: 表リスト（\tableoftables）
 #   .out: hyperrefパッケージ
 #   .toc: 目次（\tableofcontents）
-#   .log: ログ
-TEX_INT := .aux .lof .lot .out .toc .log
+TEX_INT := .lof .lot .out .toc
 # 索引中間ファイルの拡張子
 #   .idx: auxから作成
 #   .ind: idxから作成
-#   .ilg: 索引ログ
-IND_INT := .idx .ind .ilg
+IND_INT := .idx .ind
 # BiBTeX中間ファイルの拡張子
 #   .bbl: auxから作成
-#   .blg: BiBTeXログ
 BIB_INT := .bbl .blg
+#   .log: ログ
+#   .ilg: 索引ログ
+#   .blg: BiBTeXログ
+LOG := .log .ilg .blg
 
-ALL_INTERFILES = $(addprefix *,$(TEX_INT) $(IND_INT) $(BIB_INT) .fls .d .*_prev)
+ALL_INTERFILES = $(addprefix *,.aux $(TEX_INT) $(IND_INT) $(BIB_INT) $(LOG) .fls .d .*_prev)
 
+# make完了後、中間ファイルを残す
 .SECONDARY: $(wildcard ALL_INTERFILES)
 
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
 
 # .flsファイルから、INPUTファイルを取得。ただし、$TEXMFDISTのファイルを除く
+# 取得は、1回のmake実行につき1回だけ行われる
 INPUTFILES = $(INPUTFILESre)
 
 INPUTFILESre = $(eval INPUTFILES := \
@@ -101,6 +102,7 @@ INPUTFILESre = $(eval INPUTFILES := \
   ))))
 
 # .flsファイルから、OUTPUTファイルを取得。ただし、$TEXMFDISTのファイルを除く
+# 取得は、1回のmake実行につき1回だけ行われる
 OUTPUTFILES =  $(OUTFILESre)
 
 OUTFILESre = $(eval OUTPUTFILES := \
@@ -109,10 +111,11 @@ OUTFILESre = $(eval OUTPUTFILES := \
     $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
   ))))
 
-# $(BASE).texで使われるLaTeX中間ファイル
+# $(BASE).texで読み込まれる中間ファイルを$(BASE).flsから取得する
+# .idxは、.indへ置換
 INTERFILES = \
   $(sort $(subst .idx,.ind, \
-    $(filter $(addprefix $(BASE),.lof .lot .out .toc .idx .ind .bbl),$(INPUTFILES) $(OUTPUTFILES)) \
+    $(filter $(addprefix $(BASE),$(TEX_INT) $(IND_INT) $(BIB_INT)),$(INPUTFILES) $(OUTPUTFILES)) \
   ))
 
 INTERFILES_PREV = $(addsuffix _prev,$(INTERFILES))
@@ -120,18 +123,22 @@ INTERFILES_PREV = $(addsuffix _prev,$(INTERFILES))
 # TeXファイル - .tex
 TEXFILES = $(filter %.tex,$(INPUTFILES))
 
-# 画像ファイル - .pdf、.eps、.jpg／jpeg、.png、および.xbb
+# 対応する画像ファイルの拡張子
+GRAPHICSEXT := .pdf .eps .jpg .jpeg .png .bmp
+
+# $(BASE).texで読み込まれる画像ファイルを取得する
 GRAPHICFILES = $(GRAPHICFILESre)
 
-GRAPHICFILESre =  $(eval GRAPHICFILES := \
-  $(sort $(shell \
+GRAPHICFILESre = $(eval GRAPHICFILES := \
+  $(sort \
+    $(shell \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
       $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
       $(SED) -n -e 's/\\includegraphics\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
       $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' \
     ) \
-    $(filter %.pdf %.eps %.jpeg %.jpg %.png %.bmp,$(INPUTFILES)) \
-  ))
+    $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
+))
 
 # そのほかの読み込みファイル
 OTHERFILES = \
@@ -152,11 +159,6 @@ BIBDBre = $(eval BIBDB := \
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
 COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log; exit 1)
-
-FLSCMD = $(LATEX) -interaction=nonstopmode -recorder $(BASE).tex
-CREATE.fls = \
-  $(ECHO) $(FLSCMD); $(FLSCMD) 1>/dev/null 2>&1; \
-  $(RM) $(addprefix $(BASE),$(TEX_INT) $(IND_INT) $(BIB_INT) .dvi)
 
 # 相互参照未定義の警告
 WARN_UNDEFREF := 'There were undefined references\.'
@@ -189,6 +191,13 @@ COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 
 # ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
 CMPPREV = $(CMP) $@ $< || $(CP) -p -v $< $@
+
+# $(BASE).flsファイルの作成
+FLSCMD = $(LATEX) -interaction=nonstopmode -recorder $(BASE).tex
+CREATE.fls = \
+  $(FLSCMD) 1>/dev/null 2>&1; \
+  test -e $(BASE).fls && $(ECHO) '$(BASE).fls is created.'; \
+  $(RM) $(addprefix $(BASE),.aux .dvi .log $(TEX_INT) $(IND_INT) $(BIB_INT))
 
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
