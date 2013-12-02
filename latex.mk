@@ -177,7 +177,7 @@ COMPILES.tex = \
 # DVI -> PDF
 # 出力結果は.logファイルへ出力
 DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
-COMPILE.dvi = $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || ($(CAT) $(BASE).log; exit 1)
+COMPILE.dvi = $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
 
 # 索引中間ファイル（.ind）作成
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
