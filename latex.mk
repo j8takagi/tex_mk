@@ -44,6 +44,7 @@ CMP := cmp -s
 CP := cp
 ECHO := /bin/echo
 GREP := grep
+MKDIR := mkdir
 SED := sed
 SEQ := seq
 
@@ -62,35 +63,27 @@ EXTRACTBBFLAGS ?=
 BIBTEXFLAG ?=
 MENDEXFLAG ?=
 
-tex-warning:
-	@$(ECHO) "check current directory, or set TEXTARGET in Makefile."
-
-# ファイル名から拡張子を除いた部分
-BASE = $(basename $<)
-
 # .aux、.fls以外のTeX中間ファイルの拡張子
-#   .glo: 用語集。\glossaryがあれば生成
-#   .lof: 図リスト。\listoffiguresがあれば生成
-#   .lot: 表リスト。\listoftablesがあれば生成
-#   .out: PDFブックマーク。hyperrefパッケージをbookmarksオプションtrue（初期値）で呼び出せば生成
-#   .toc: 目次。\tableofcontentsがあれば生成
-TEX_INT := .glo .lof .lot .out .toc
-# 索引中間ファイルの拡張子
-#   .idx: \makeindexがあれば生成
-#   .ind: idxから作成
-IND_INT := .idx .ind
-# BiBTeX中間ファイルの拡張子
-#   .bbl: auxから作成
-BIB_INT := .bbl .blg
-#   .log: ログ
+#   .bbl: 文献リスト。作成方法はパターンルールで定義
+#   .glo: 用語集。\glossaryがあればTeX処理で生成
+#   .idx: 索引。\makeindexがあればTeX処理で生成
+#   .ind: 索引。作成方法はパターンルールで定義
+#   .lof: 図リスト。\listoffiguresがあればTeX処理で生成
+#   .lot: 表リスト。\listoftablesがあればTeX処理で生成
+#   .out: PDFブックマーク。hyperrefパッケージをbookmarksオプションtrue（初期値）で呼び出していれば、TeX処理で生成
+#   .toc: 目次。\tableofcontentsがあればTeX処理で生成
+LATEXINTEXT := .bbl .glo .idx .ind .lof .lot .out .toc
+
+# ログファイル
+#   .log: TeXログ
 #   .ilg: 索引ログ
 #   .blg: BiBTeXログ
-LOG := .log .ilg .blg
+LOGEXT := .log .ilg .blg
 
-ALL_INTERFILES = $(addprefix *,.aux $(TEX_INT) $(IND_INT) $(BIB_INT) $(LOG) .fls .d .*_prev)
+ALLINTERFILES = $(addprefix *,.aux $(LATEXINTEXT) $(LOGEXT) .fls .d .*_prev)
 
 # make完了後、中間ファイルを残す
-.SECONDARY: $(wildcard ALL_INTERFILES)
+.SECONDARY: $(wildcard ALLINTERFILES)
 
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
@@ -117,12 +110,12 @@ OUTFILESre = $(eval OUTPUTFILES := \
 
 # $(BASE).texで読み込まれる中間ファイルを$(BASE).flsから取得する
 # .idxは、.indへ置換
-INTERFILES = \
+LATEXINTERFILES = \
   $(sort $(subst .idx,.ind, \
-    $(filter $(addprefix $(BASE),$(TEX_INT) $(IND_INT) $(BIB_INT)),$(INPUTFILES) $(OUTPUTFILES)) \
+    $(filter $(addprefix $(BASE),$(LATEXINTEXT)),$(INPUTFILES) $(OUTPUTFILES)) \
   ))
 
-INTERFILES_PREV = $(addsuffix _prev,$(INTERFILES))
+LATEXINTERFILES_PREV = $(addsuffix _prev,$(LATEXINTERFILES))
 
 # TeXファイル - .tex
 TEXFILES = $(filter %.tex,$(INPUTFILES))
@@ -147,7 +140,7 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
 
 # そのほかの読み込みファイル
 OTHERFILES = \
-  $(sort $(filter-out %.aux $(INTERFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
+  $(sort $(filter-out %.aux $(LATEXINTERFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
 BIBDB = $(BIBDBre)
@@ -188,27 +181,31 @@ COMPILE.dvi = \
   $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
   ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
 
-# 索引中間ファイル（.ind）作成
-MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
-COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg; exit 1)
-
-# 文献リスト中間ファイル（.bbl）作成
-BIBTEXCMD = $(BIBTEX) $(BIBTEXFLAG) $(BASE).aux
-COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg; exit 1)
-
 # ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
 CMPPREV = $(CMP) $@ $< || $(CP) -p -v $< $@
 
+######################################################################
+# .dファイルの生成と読み込み
+# .dファイルには、LaTeX処理での依存関係が記述される
+######################################################################
+
+# .flsファイル作成用の一時ディレクトリー
+FLSDIR := .fls.temp
+
 # $(BASE).flsファイルの作成
-FLSCMD = $(LATEX) -interaction=nonstopmode -recorder $(BASE).tex
-CREATE.fls = \
+FLSCMD = $(LATEX) -interaction=nonstopmode -recorder -output-directory=$(FLSDIR) $(BASE).tex
+
+GENERETE.fls = \
+  test ! -e $(FLSDIR) && $(MKDIR) $(FLSDIR) || \
+    test ! -d $(FLSDIR) && ($(ECHO) 'File $(FLSDIR) already exists and not a directory.' 1>&2; exit 1); \
   $(FLSCMD) 1>/dev/null 2>&1; \
-  test -e $(BASE).fls && $(ECHO) '$(BASE).fls is created.'; \
-  $(RM) $(addprefix $(BASE),.aux .dvi .log $(TEX_INT) $(IND_INT) $(BIB_INT))
+  $(SED) -e 's|$(FLSDIR)/||g' $(FLSDIR)/$(BASE).fls >$(BASE).fls; \
+  test -e $(BASE).fls && \
+    ($(ECHO) '$(BASE).fls is generated.'; $(RM) -r $(FLSDIR)) || \
+    ($(ECHO) '$(BASE).fls is not generated.' 1>&2; exit 1)
 
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
-	@$(ECHO) '$@ is created by scanning $(BASE).tex and $(BASE).fls.'
     # .dファイルの依存関係
 	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls' >$@
     # \includeまたは\input命令で読み込まれるTeXファイルの依存関係
@@ -241,15 +238,16 @@ CREATE.fls = \
         $(ECHO) '$(BASE).bbl: $(BIBDB) $(BASE).tex'; \
       ) >>$@)
     # 中間ファイルの依存関係
-	$(if $(sort $(INTERFILES) $(BIBDB)),@( \
+	$(if $(sort $(LATEXINTERFILES) $(BIBDB)),@( \
       $(ECHO); \
       $(ECHO) '# LaTeX Intermediate Files'; \
-      $(ECHO) '$(BASE).dvi:: $(sort $(INTERFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))'; \
+      $(ECHO) '$(BASE).dvi:: $(sort $(LATEXINTERFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))'; \
       $(ECHO) '	@$$(COMPILE.tex)'; \
       $(ECHO); \
       $(ECHO) '$(BASE).dvi:: $(BASE).aux'; \
       $(ECHO) '	@$$(COMPILES.tex)'; \
     ) >>$@)
+	@$(ECHO) '$@ is generated by scanning $(BASE).tex and $(BASE).fls.'
 
 # 変数TEXTARGETSで指定されたターゲットファイルに対応する
 # .dファイルをインクルードし、依存関係を取得する
@@ -258,80 +256,99 @@ ifeq (,$(filter %clean %.xbb %.tex %.d %.fls %.fls_prev,$(MAKECMDGOALS)))
   -include $(addsuffix .d,$(basename $(TEXTARGETS)))
 endif
 
-# auxファイル作成
+######################################################################
+# dviおよびPDFファイルを生成するパターンルール
+# TeX -> dvi -> PDF
+######################################################################
+
+# TeX -> aux
 %.aux: %.tex
 	@$(COMPILE.tex)
 
+# aux -> dvi
 %.dvi: %.aux
 	@$(COMPILES.tex)
 
+# tex -> dvi
 %.dvi: %.tex
 	@$(COMPILE.tex)
 	@$(COMPILES.tex)
 
-# PDFファイル作成
+# dvi -> PDF
 %.pdf: %.dvi
 	@$(COMPILE.dvi)
 
-# バウンディング情報ファイル作成
-# pdf、jpeg/jpg、pngファイルに対応
-extractbb:
-	$(MAKE) -s $(addsuffix .xbb,$(basename $(wildcard $(addprefix *,.pdf .jpg .jpeg .png))))
+######################################################################
+# ファイルリストファイル（.fls）作成
+######################################################################
 
-%.xbb: %.pdf
-	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
-
-%.xbb: %.jpeg
-	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
-
-%.xbb: %.jpg
-	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
-
-%.xbb: %.png
-	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
-
-# ファイル一覧作成
 %.fls: %.tex
-	@-$(CREATE.fls)
+	@-$(GENERETE.fls)
 
-%.fls_prev: %.fls
-	@$(CMPPREV)
+######################################################################
+# LaTeX中間ファイルを生成するパターンルール
+######################################################################
 
-# 目次中間ファイル作成
-%.toc: %.tex
-	@$(MAKE) -s $(BASE).aux
-
-%.toc_prev: %.toc
-	@$(CMPPREV)
-
-# 図リスト中間ファイル作成
+# 図リスト
 %.lof: %.tex
 	@$(MAKE) -s $(BASE).aux
 
 %.lof_prev: %.lof
 	@$(CMPPREV)
 
-# 表リスト中間ファイル作成
+# 表リスト
 %.lot: %.tex
 	@$(MAKE) -s $(BASE).aux
 
 %.lot_prev: %.lot
 	@$(CMPPREV)
 
-# 索引中間ファイル作成
+# PDFブックマーク
+%.out: %.tex
+	@$(MAKE) -s $(BASE).aux
+
+%.out_prev: %.out
+	@$(CMPPREV)
+
+# 目次
+%.toc: %.tex
+	@$(MAKE) -s $(BASE).aux
+
+%.toc_prev: %.toc
+	@$(CMPPREV)
+
+######################################################################
+# 索引用中間ファイルを生成するパターンルール
+######################################################################
+
+# 索引用中間ファイル作成コマンド
+MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
+
+COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg; exit 1)
+
+# .tex -> .idx
 %.idx: %.tex
 	@$(MAKE) -s $(BASE).aux
 
 %.idx_prev: %.idx
 	@$(CMPPREV)
 
+# .idx -> .ind
 %.ind: %.idx_prev
 	@$(COMPILE.idx)
 
 %.ind_prev: %.ind
 	@$(CMPPREV)
 
-# BiBTeX中間ファイル作成
+######################################################################
+# 文献リスト用中間ファイルを生成するパターンルール
+######################################################################
+# 文献リスト用中間ファイル作成コマンド
+BIBTEXCMD = $(BIBTEX) $(BIBTEXFLAG) $(BASE).aux
+
+COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg; exit 1)
+
+# TeX -> .aux -> .bib
 %.bbl: %.tex
 	@$(MAKE) -s $(BASE).aux
 	@$(COMPILE.bib)
