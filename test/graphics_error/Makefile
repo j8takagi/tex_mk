@@ -2,7 +2,8 @@
 
 TEXTARGETS := graphics.pdf
 
-all: graphics.pdf
+all:
+	$(MAKE) -s graphics.pdf && exit 1 || exit 0
 
 include latex.mk
 

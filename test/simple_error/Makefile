@@ -5,7 +5,8 @@ SED := sed
 
 .PHONY: all update rebase clean distclean
 
-$(TEXTARGETS):
+all:
+	$(MAKE) -s $(TEXTARGETS) && exit 1 || exit 0
 
 include latex.mk
 
