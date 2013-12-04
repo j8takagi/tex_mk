@@ -196,8 +196,7 @@ FLSDIR := .fls.temp
 FLSCMD = $(LATEX) -interaction=nonstopmode -recorder -output-directory=$(FLSDIR) $(BASE).tex
 
 GENERETE.fls = \
-  test ! -e $(FLSDIR) && $(MKDIR) $(FLSDIR) || \
-    test ! -d $(FLSDIR) && ($(ECHO) 'File $(FLSDIR) already exists and not a directory.' 1>&2; exit 1); \
+  test ! -e $(FLSDIR) && $(MKDIR) $(FLSDIR); \
   $(FLSCMD) 1>/dev/null 2>&1; \
   $(SED) -e 's|$(FLSDIR)/||g' $(FLSDIR)/$(BASE).fls >$(BASE).fls; \
   test -e $(BASE).fls && \
