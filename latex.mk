@@ -20,7 +20,7 @@
 #
 # == 擬似ターゲット ==
 # - tex-clean: TeX中間ファイル（auxなど）を削除。ターゲットに.dviが含まれていないときは.dviファイルを削除
-# - xbb-clean: バウンディング情報ファイル（.xbb）を削除
+# - tex-xbb-clean: バウンディング情報ファイル（.xbb）を削除
 # - tex-distclean: TeX中間ファイル、バウンディング情報ファイル、ターゲットファイル（PDF、.dvi）を削除
 #
 # === Makefile -- sample ===
@@ -30,11 +30,13 @@
 #
 # include latex.mk
 
-ifdef DEBUG
+# シェルスクリプトをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
+# 例: DEBUGSH=1 make
+ifdef DEBUGSH
   SHELL := /bin/sh -x
 endif
 
-.PHONY: tex-warning tex-xbb tex-clean tex-distclean
+.PHONY: tex-warn tex-xbb tex-clean tex-distclean
 
 # シェルコマンド
 CAT := cat
@@ -337,26 +339,50 @@ extractbb:
 %.bbl_prev: %.bbl
 	@$(CMPPREV)
 
-# hyperref中間ファイル作成
-%.out: %.tex
-	@$(MAKE) -s $(BASE).aux
+######################################################################
+# バウンディング情報ファイルを生成するパターンルール
+######################################################################
+%.xbb: %.pdf
+	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
 
-%.out_prev: %.out
-	@$(CMPPREV)
+%.xbb: %.jpeg
+	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
 
-# tex-cleanターゲット
+%.xbb: %.jpg
+	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
+
+%.xbb: %.png
+	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
+
+%.xbb: %.bmp
+	$(EXTRACTBB) $(EXTRACTBBFLAGS) $<
+
+######################################################################
+# ターゲット
+######################################################################
+
+# 警告
+tex-warn:
+	@$(ECHO) "check current directory, or set TEXTARGET in Makefile."
+
+# すべての画像ファイルに対してextractbbを実行
+tex-xbb:
+	$(MAKE) -s $(addsuffix .xbb,$(basename $(wildcard $(addprefix *,$(GRAPHICSEXT)))))
+
+# 中間ファイルの削除
 tex-clean:
-	$(RM) $(ALL_INTERFILES)
+	$(RM) $(ALLINTERFILES)
+	$(RM) -r $(FLSDIR)
 ifeq (,$(filter %.dvi,$(TEXTARGETS)))
 	$(RM) *.dvi
 endif
 
-# xbb-cleanターゲット
-xbb-clean:
+# .xbbファイルの削除
+tex-xbb-clean:
 	$(RM) *.xbb
 
-# tex-distcleanターゲット
-tex-distclean: tex-clean xbb-clean
+# 生成されたすべてのファイルの削除
+tex-distclean: tex-clean tex-xbb-clean
 ifneq (,$(filter %.dvi,$(TEXTARGETS)))
 	$(RM) *.dvi
 endif
