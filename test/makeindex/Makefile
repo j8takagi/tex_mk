@@ -30,10 +30,10 @@ makeindex_3.pdf: index-update
 	@$(CP) -v makeindex.pdf $@
 
 body-update:
-	$(SED) -i -e 's/本文変更なし。/本文を変更。/' makeindex.tex
+	$(SED) -i.bak -e 's/本文変更なし。/本文を変更。/' makeindex.tex
 
 index-update:
-	$(SED) -i -e 's/楽譜の/楽譜\\index{がくふ@楽譜}の/' makeindex.tex
+	$(SED) -i.bak -e 's/楽譜の/楽譜\\index{がくふ@楽譜}の/' makeindex.tex
 
 rebase:
 	$(CMP) makeindex.tex.base makeindex.tex || $(CP) -v makeindex.tex.base makeindex.tex
@@ -41,6 +41,7 @@ rebase:
 include latex.mk
 
 clean: tex-clean
+	$(RM) *.bak
 
 distclean: rebase clean tex-distclean
 	$(RM) makeindex_*.pdf

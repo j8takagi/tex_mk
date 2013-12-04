@@ -55,12 +55,13 @@ bib-rebase:
 	$(CMP) jpnbook.bib.base jpnbook.bib || $(CP) -v jpnbook.bib.base jpnbook.bib
 
 body-update: body-rebase
-	$(SED) -i -e 's/本文変更なし。/本文を変更。/' bibtex.tex
+	$(SED) -i.bak -e 's/本文変更なし。/本文を変更。/' bibtex.tex
 
 body-rebase:
 	$(CMP) bibtex.tex.base bibtex.tex || $(CP) -v bibtex.tex.base bibtex.tex
 
 clean: tex-clean
+	$(RM) *.bak
 
-distclean: rebase tex-distclean
+distclean: rebase clean tex-distclean
 	$(RM) bibtex_*.pdf

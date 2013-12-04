@@ -23,7 +23,7 @@ simple_2.pdf: update
 	@$(CP) -v simple.pdf $@
 
 update:
-	$(SED) -i -e 's/，/、/g' -e 's/．/。/g' simple.tex
+	$(SED) -i.bak -e 's/，/、/g' -e 's/．/。/g' simple.tex
 
 rebase:
 	$(CMP) simple.tex.base simple.tex || $(CP) -v simple.tex.base simple.tex
@@ -31,6 +31,7 @@ rebase:
 include latex.mk
 
 clean: tex-clean
+	$(RM) *.bak
 
-distclean: rebase tex-distclean
+distclean: rebase clean tex-distclean
 	$(RM) simple_*.pdf
