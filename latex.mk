@@ -136,11 +136,12 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
     $(shell \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
       $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
-      $(SED) -n -e 's/\\includegraphics\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
-      $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' \
+      $(SED) -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n -e 's/.*\\includegraphics\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' \
     ) \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
-))
+  ))
 
 # そのほかの読み込みファイル
 OTHERFILES = \
@@ -151,11 +152,11 @@ BIBDB = $(BIBDBre)
 
 BIBDBre = $(eval BIBDB := \
   $(addsuffix .bib,$(basename $(sort $(shell \
-     $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
-     $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
-     $(SED) -n -e 's/\\bibliography\(\[[^]]*\]\)\{0,1\}{[^}]*}/&\n/pg' | \
-     $(SED) -n -e 's/.*{\([^}]*\)}$$/\1/p' | \
-     $(SED) -e 's/,/ /g' \
+      $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n -e 's/.*\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' | \
+      $(SED) -e 's/,/ /g' \
    )))))
 
 # LaTeX処理（コンパイル）
@@ -181,7 +182,9 @@ COMPILES.tex = \
 # DVI -> PDF
 # 出力結果は.logファイルへ出力
 DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
-COMPILE.dvi = $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
+COMPILE.dvi = \
+  $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
+  ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
 
 # 索引中間ファイル（.ind）作成
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
