@@ -33,7 +33,7 @@
 #debug
 #SHELL = /bin/sh -x
 
-.PHONY: tex-warning tex-clean tex-distclean
+.PHONY: tex-warning tex-xbb tex-clean tex-distclean
 
 # シェルコマンド
 CAT := cat
@@ -66,13 +66,15 @@ tex-warning:
 BASE = $(basename $<)
 
 # .aux、.fls以外のTeX中間ファイルの拡張子
-#   .lof: 図リスト（\tableoffigures）
-#   .lot: 表リスト（\tableoftables）
-#   .out: hyperrefパッケージ
+#   .glo: 用語集。\glossaryがあれば生成
+#   .lof: 図リスト。\listoffiguresがあれば生成
+#   .lot: 表リスト。\listoftablesがあれば生成
+#   .out: PDFブックマーク。hyperrefパッケージをbookmarksオプションtrue（初期値）で呼び出せば生成
+#   .toc: 目次。\tableofcontentsがあれば生成
 #   .toc: 目次（\tableofcontents）
-TEX_INT := .lof .lot .out .toc
+TEX_INT := .glo .lof .lot .out .toc
 # 索引中間ファイルの拡張子
-#   .idx: auxから作成
+#   .idx: \makeindexがあれば生成
 #   .ind: idxから作成
 IND_INT := .idx .ind
 # BiBTeX中間ファイルの拡張子
