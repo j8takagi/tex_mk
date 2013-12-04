@@ -71,7 +71,6 @@ BASE = $(basename $<)
 #   .lot: 表リスト。\listoftablesがあれば生成
 #   .out: PDFブックマーク。hyperrefパッケージをbookmarksオプションtrue（初期値）で呼び出せば生成
 #   .toc: 目次。\tableofcontentsがあれば生成
-#   .toc: 目次（\tableofcontents）
 TEX_INT := .glo .lof .lot .out .toc
 # 索引中間ファイルの拡張子
 #   .idx: \makeindexがあれば生成
