@@ -30,8 +30,9 @@
 #
 # include latex.mk
 
-#debug
-#SHELL = /bin/sh -x
+ifdef DEBUG
+  SHELL := /bin/sh -x
+endif
 
 .PHONY: tex-warning tex-xbb tex-clean tex-distclean
 
