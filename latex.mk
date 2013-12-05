@@ -6,23 +6,6 @@
 # 2. Makefileに変数TEXTARGETS と「include latex.mk」を記述する
 # 3. texソースファイルと同じディレクトリーで、make コマンドを実行する
 #
-# == 機能 ==
-# - 読み込むべき中間ファイルがないことや相互参照未定義の警告がある場合、LaTeX処理を最大4回繰り返す
-# - \includegraphics命令がTeXファイルに含まれる場合、グラフィックファイルを挿入
-#   -- 挿入されたグラフィックファイルが更新されたときは、処理を開始
-#   -- 挿入されたグラフィックファイルがないときは、処理を中止
-#   -- 挿入されたグラフィックファイルに対するバウンディング情報ファイル（.xbb）を作成
-# - \include、\input命令がTeXファイルに含まれる場合、TeXファイルを挿入
-#   -- 挿入されたTeXファイルが更新されたときは、処理を開始
-#   -- 挿入されたTeXファイルがないときは、処理を中止
-# - \makeindex命令が含まれる場合、mendexで索引を作成
-# - \bibliography命令が含まれる場合、BiBTeXで文献一覧を作成
-#
-# == 擬似ターゲット ==
-# - tex-clean: TeX中間ファイル（auxなど）を削除。ターゲットに.dviが含まれていないときは.dviファイルを削除
-# - tex-xbb-clean: バウンディング情報ファイル（.xbb）を削除
-# - tex-distclean: TeX中間ファイル、バウンディング情報ファイル、ターゲットファイル（PDF、.dvi）を削除
-#
 # === Makefile -- sample ===
 # TEXTARGETS := report.tex
 #
@@ -30,13 +13,9 @@
 #
 # include latex.mk
 
-# シェルスクリプトをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
-# 例: DEBUGSH=1 make
-ifdef DEBUGSH
-  SHELL := /bin/sh -x
-endif
-
-.PHONY: tex-warn tex-xbb tex-clean tex-distclean
+######################################################################
+# 使用するシェルコマンドの定義
+######################################################################
 
 # シェルコマンド
 CAT := cat
@@ -56,14 +35,24 @@ BIBTEX := pbibtex
 MENDEX := mendex
 KPSEWHICH := kpsewhich
 
-#LaTeXオプション
+# LaTeXオプション
 LATEXFLAG ?=
 DVIPDFMXFLAG ?=
 EXTRACTBBFLAGS ?=
 BIBTEXFLAG ?=
 MENDEXFLAG ?=
 
-# .aux、.fls以外のTeX中間ファイルの拡張子
+# シェルコマンドをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
+# 例: DEBUGSH=1 make
+ifdef DEBUGSH
+  SHELL := /bin/sh -x
+endif
+
+######################################################################
+# 拡張子
+######################################################################
+
+# .aux、.fls以外のLaTeX中間ファイルの拡張子
 #   .bbl: 文献リスト。作成方法はパターンルールで定義
 #   .glo: 用語集。\glossaryがあればTeX処理で生成
 #   .idx: 索引。\makeindexがあればTeX処理で生成
@@ -74,19 +63,54 @@ MENDEXFLAG ?=
 #   .toc: 目次。\tableofcontentsがあればTeX処理で生成
 LATEXINTEXT := .bbl .glo .idx .ind .lof .lot .out .toc
 
-# ログファイル
+# ログファイルの拡張子
 #   .log: TeXログ
 #   .ilg: 索引ログ
 #   .blg: BiBTeXログ
 LOGEXT := .log .ilg .blg
 
+# すべてのTeX中間ファイルの拡張子
 ALLINTEXT := .aux .dvi $(LATEXINTEXT) $(LOGEXT) .fls .d .*_prev
+
+# 画像ファイルの拡張子
+GRAPHICSEXT := .pdf .eps .jpg .jpeg .png .bmp
 
 # make完了後、中間ファイルを残す
 .SECONDARY: $(foreach t,$(TEXTARGETS),$(addprefix $(basename $t),$(ALLINTEXT)))
 
+######################################################################
+# TeX処理の定義
+######################################################################
+
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
+
+# LaTeX処理（コンパイル）
+LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
+
+COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log; exit 1)
+
+# 相互参照未定義の警告
+WARN_UNDEFREF := There were undefined references.
+
+# LaTeX処理
+# ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
+CNT := 3
+
+COMPILES.tex = \
+  for i in `$(SEQ) 1 $(CNT)`; do $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log && $(COMPILE.tex) || (test $$? -eq 1 && exit 0 || exit $$?); done
+
+# DVI -> PDF
+# 出力結果は.logファイルへ出力
+DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
+COMPILE.dvi = \
+  $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
+  ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
+
+######################################################################
+# .dファイルの生成と読み込み
+# .dファイルには、LaTeX処理での依存関係が記述される
+######################################################################
 
 # .flsファイルから、INPUTファイルを取得。ただし、$TEXMFDISTのファイルを除く
 # 取得は、1回のmake実行につき1回だけ行われる
@@ -108,7 +132,7 @@ OUTFILESre = $(eval OUTPUTFILES := \
     $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
   ))))
 
-# $(BASE).texで読み込まれる中間ファイルを$(BASE).flsから取得する
+# $(BASE).texで読み込まれる中間ファイルを.flsから取得する
 # .idxは、.indへ置換
 LATEXINTFILES = \
   $(sort $(subst .idx,.ind, \
@@ -117,13 +141,10 @@ LATEXINTFILES = \
 
 LATEXINTFILES_PREV = $(addsuffix _prev,$(LATEXINTFILES))
 
-# 分割され、\includeや\inputで読み込まれるTeXファイル - .tex
+# \includeや\inputで読み込まれるTeXファイルを.flsから取得する
 TEXFILES = $(filter %.tex,$(INPUTFILES))
 
-# 対応する画像ファイルの拡張子
-GRAPHICSEXT := .pdf .eps .jpg .jpeg .png .bmp
-
-# $(BASE).texで読み込まれる画像ファイルを取得する
+# \includegraphicsで読み込まれる画像ファイルを$(BASE).texと$(TEXFILES)、および.flsファイルから取得する
 GRAPHICFILES = $(GRAPHICFILESre)
 
 GRAPHICFILESre = $(eval GRAPHICFILES := \
@@ -138,7 +159,7 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
   ))
 
-# そのほかの読み込みファイル
+# .flsから取得した、そのほかの読み込みファイル（.styなど）
 OTHERFILES = $(sort $(filter-out %.aux $(LATEXINTFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
@@ -152,41 +173,6 @@ BIBDBre = $(eval BIBDB := \
       $(SED) -n -e 's/.*\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' | \
       $(SED) -e 's/,/ /g' \
    )))))
-
-# LaTeX処理（コンパイル）
-LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
-COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log; exit 1)
-
-# 相互参照未定義の警告
-WARN_UNDEFREF := 'There were undefined references\.'
-
-# LaTeX処理
-# ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
-CNT := 3
-COMPILES.tex = \
-  @(for i in `$(SEQ) 1 $(CNT)`; do \
-      if test -s $@ -a -s $(BASE).log; then \
-        $(GREP) -e $(WARN_UNDEFREF) $(BASE).log || exit 0; \
-      else \
-        $(ECHO) '$@ and/or $(BASE).log does not exist.'; \
-      fi; \
-      $(COMPILE.tex); \
-    done)
-
-# DVI -> PDF
-# 出力結果は.logファイルへ出力
-DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
-COMPILE.dvi = \
-  $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
-  ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
-
-# ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
-CMPPREV = $(CMP) $@ $< && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
-
-######################################################################
-# .dファイルの生成と読み込み
-# .dファイルには、LaTeX処理での依存関係が記述される
-######################################################################
 
 # .flsファイル作成用の一時ディレクトリー
 FLSDIR := .fls.temp
@@ -204,7 +190,7 @@ GENERETE.fls = \
 
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
-    # 変数の展開
+    # Makefile変数の展開
 	@$(foreach i,0 1,$(ECHO) "Makefiles variable -- LATEXINTFILES=$(LATEXINTFILES) TEXFILES=$(TEXFILES) GRAPHICFILES=$(GRAPHICFILES) BIBDB=$(BIBDB)" $(if $(filter 0,$i),>/dev/null);)
     # .dファイルの依存関係
 	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls' >$@
@@ -212,13 +198,17 @@ GENERETE.fls = \
 	$(if $(sort $(LATEXINTFILES) $(BIBDB)),@( \
       $(ECHO); \
       $(ECHO) '# LaTeX Intermediate Files'; \
+      $(ECHO) '#'; \
+      $(ECHO) '# $$(COMPILE.tex) := $(LATEXCMD)'; \
+      $(ECHO) '# $$(COMPILES.tex) := $(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))'; \
+      $(ECHO) '#'; \
       $(ECHO) '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))'; \
       $(ECHO) '	@$$(COMPILE.tex)'; \
       $(ECHO); \
       $(ECHO) '$(BASE).dvi:: $(BASE).aux'; \
       $(ECHO) '	@$$(COMPILES.tex)'; \
     ) >>$@)
-    # \includeまたは\input命令で読み込まれるTeXファイルの依存関係
+    # \includeや\inputで読み込まれるTeXファイルの依存関係
 	$(if $(TEXFILES),@( \
       $(ECHO); \
       $(ECHO) '# Files called from \include or \input - .tex'; \
@@ -235,7 +225,7 @@ GENERETE.fls = \
         $(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'; \
       ) \
     ) >>$@)
-    # 文献処理用ファイルの依存関係
+    # 文献リストファイルの依存関係
 	$(if $(BIBDB),@( \
         $(ECHO); \
         $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
@@ -288,6 +278,9 @@ endif
 ######################################################################
 # LaTeX中間ファイルを生成するパターンルール
 ######################################################################
+
+# ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
+CMPPREV = $(CMP) $@ $< && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
 
 # 図リスト
 %.lof: %.tex
