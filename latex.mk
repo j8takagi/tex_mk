@@ -205,7 +205,7 @@ GENERETE.fls = \
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
     # 変数の展開
-	@$(ECHO) "extract LATEXINTFILES:$(LATEXINTFILES) TEXFILES:$(TEXFILES) GRAPHICFILES:$(GRAPHICFILES) BIBDB:$(BIBDB)"
+	@$(foreach i,0 1,$(ECHO) "Makefiles variable -- LATEXINTFILES=$(LATEXINTFILES) TEXFILES=$(TEXFILES) GRAPHICFILES=$(GRAPHICFILES) BIBDB=$(BIBDB)" $(if $(filter 0,$i),>/dev/null);)
     # .dファイルの依存関係
 	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls' >$@
     # 中間ファイルの依存関係
