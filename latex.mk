@@ -88,7 +88,9 @@ BASE = $(basename $<)
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
 
-COMPILE.tex = $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log; exit 1)
+COMPILE.tex = \
+  $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || \
+  ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log | $(SED) -e 's/.* line \([0-9]*\) .*/$(BASE).tex:\1: &/g'; exit 1)
 
 # 相互参照未定義の警告
 WARN_UNDEFREF := There were undefined references.
@@ -151,8 +153,7 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
   $(sort \
     $(shell \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
-      $(SED) -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
       $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
       $(SED) -n -e 's/.*\\includegraphics\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' \
     ) \
@@ -168,7 +169,7 @@ BIBDB = $(BIBDBre)
 BIBDBre = $(eval BIBDB := \
   $(addsuffix .bib,$(basename $(sort $(shell \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
       $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
       $(SED) -n -e 's/.*\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' | \
       $(SED) -e 's/,/ /g' \
@@ -279,8 +280,9 @@ endif
 # LaTeX中間ファイルを生成するパターンルール
 ######################################################################
 
-# ターゲットファイルと必須ファイルを比較し、内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
-CMPPREV = $(CMP) $@ $< && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
+# ターゲットファイルと必須ファイルを比較し、
+# 内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
+CMPPREV = $(CMP) $< $@ && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
 
 # 図リスト
 %.lof: %.tex
