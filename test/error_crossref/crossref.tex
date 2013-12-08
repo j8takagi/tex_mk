@@ -1,0 +1,73 @@
+\documentclass[fleqn]{jsarticle}
+\usepackage{amsmath}
+\begin{document}
+
+\title{微分積分法の基本定理 fundamental theorem of calculus}
+\author{}
+\date{}
+
+\section*{微分積分法の基本定理}
+
+関数 $f(x)$ の面積を $S(x)$、$x_0$、$x$ を$f(x)$ 上の点とし、$F(x) = \int f(x) dx$ とすると、
+
+\begin{align*}
+  S(x) = \lim_{n \to \infty} \sum^{n}_{k=1} \frac{x - x_0}{n} f(x_0 + \frac{x-x_0}{n} k) = F(x) - F(x_0)
+\end{align*}
+
+$S(x)$ は、次のように表すこともできる。
+
+\begin{align*}
+  \int^{x}_{x_0} f(t) dt &= F(x) - F(x_0) \\
+  &= [F(t)]^x_{x_0}
+\end{align*}
+
+\subsection*{証明}
+微分の定義により、
+\begin{align}
+  S'(x) = \lim_{h \to 0} \frac{S(x+h) - S(x)}{h}
+  \label{df}
+\end{align}
+
+$f(x)$ の $[x, x+h]$ での 最小値・最大値をそれぞれ $\min(f(x+h))$、$\max(f(x+h))$ とすると、
+\begin{align*}
+  h \cdot \min(f(x+h)) &\leq S(x+h) - S(x) \leq h \cdot \max(f(x+h)) \\
+  \min(f(x+h)) &\leq \frac{S(x+h) - S(x)}{h} \leq \max(f(x+h))
+\end{align*}
+
+$h \to 0$ とすると、$\min(f(x+h)) \to f(x)$、$\max(f(x+h)) \to f(x)$。
+
+そのため、はさみうちの原理により、
+\begin{align}
+  \lim_{h \to 0} \frac{S(x+h) - S(x)}{h} = f(x)
+  \label{hasami}
+\end{align}
+
+
+\ref{noexist}、\ref{hasami} より、
+\begin{align*}
+  S'(x) = f(x)
+\end{align*}
+
+$C$ を積分定数とすると、
+\begin{align}
+  S(x) = F(x) + C
+  \label{sx}
+\end{align}
+
+また、$x = x_0$ のとき、
+\begin{align*}
+  S(x_0) = \lim_{n \to \infty} \sum^{n}_{k=1} \frac{x_0 - x_0}{n} f(x_0 + \frac{x_0-x_0}{n} k) = 0
+\end{align*}
+
+\ref{sx} に$x = x_0$、$S(x_0) = 0$ を代入し、
+\begin{align*}
+  0 &= F(x_0) + C \\
+  C &= -F(x_0)
+\end{align*}
+
+そのため、
+\begin{align*}
+  S(x) = F(x) - F(x_0)
+\end{align*}
+
+\end{document}
