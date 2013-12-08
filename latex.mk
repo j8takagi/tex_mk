@@ -78,40 +78,8 @@ GRAPHICSEXT := .pdf .eps .jpg .jpeg .png .bmp
 # make完了後、中間ファイルを残す
 .SECONDARY: $(foreach t,$(TEXTARGETS),$(addprefix $(basename $t),$(ALLINTEXT)))
 
-######################################################################
-# TeX処理の定義
-######################################################################
-
 # ファイル名から拡張子を除いた部分
 BASE = $(basename $<)
-
-# LaTeX処理（コンパイル）
-LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
-
-# エラー発生時、ログのエラー部分を行頭に「<TeXファイル名>:<行番号>:」を付けて表示する
-COMPILE.tex = \
-  $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || \
-  ( \
-    $(SED) -n -e '/^!/,/^$$/p' $(BASE).log | \
-    $(SED) -e 's/.*\s*l\(ine \|\.\)\([0-9]*\) .*/$(BASE).tex:\2: &/'; \
-    exit 1)
-
-# 相互参照未定義の警告
-WARN_UNDEFREF := There were undefined references.
-
-# LaTeX処理
-# ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
-CNT := 3
-
-COMPILES.tex = \
-  for i in `$(SEQ) 1 $(CNT)`; do $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log && $(COMPILE.tex) || (test $$? -eq 1 && exit 0 || exit $$?); done
-
-# DVI -> PDF
-# 出力結果は.logファイルへ出力
-DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
-COMPILE.dvi = \
-  $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
-  ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
 
 ######################################################################
 # .dファイルの生成と読み込み
@@ -179,20 +147,6 @@ BIBDBre = $(eval BIBDB := \
       $(SED) -e 's/,/ /g' \
    )))))
 
-# .flsファイル作成用の一時ディレクトリー
-FLSDIR := .fls.temp
-
-# $(BASE).flsファイルの作成
-FLSCMD = $(LATEX) -interaction=nonstopmode -recorder -output-directory=$(FLSDIR) $(BASE).tex
-
-GENERETE.fls = \
-  test ! -e $(FLSDIR) && $(MKDIR) $(FLSDIR); \
-  $(FLSCMD) 1>/dev/null 2>&1; \
-  $(SED) -e 's|$(FLSDIR)/||g' $(FLSDIR)/$(BASE).fls >$(BASE).fls; \
-  test -e $(BASE).fls && \
-    ($(ECHO) '$(BASE).fls is generated.'; $(RM) -r $(FLSDIR)) || \
-    ($(ECHO) '$(BASE).fls is not generated.' 1>&2; exit 1)
-
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
@@ -256,6 +210,52 @@ endif
 # TeX -> dvi -> PDF
 ######################################################################
 
+# LaTeX処理（コンパイル）
+LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
+
+# エラー発生時、ログのエラー部分を行頭に「<TeXファイル名>:<行番号>:」を付けて表示する
+COMPILE.tex = \
+  $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || \
+  ( \
+    $(SED) -n -e '/^!/,/^$$/p' $(BASE).log | \
+      $(SED) -e 's/.*\s*l\.\([0-9]*\)\s*.*/$(BASE).tex:\1: &/' 1>&2; \
+    exit 1)
+
+# 相互参照未定義の警告
+WARN_UNDEFREF := There were undefined references.
+
+# LaTeX処理
+# ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
+CNT := 3
+CNTMSG := $(LATEX) is run $(CNT) times, but there are still undefined references.
+
+COMPILES.tex = \
+  for i in `$(SEQ) 0 $(CNT)`; do \
+    if test $$i -lt $(CNT); then \
+      if $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log; then \
+        $(COMPILE.tex); \
+      else \
+        if test $$? -eq 1; then \
+          exit 0; \
+        else \
+          exit $$?; \
+        fi \
+      fi; \
+    else \
+      $(ECHO) "$(CNTMSG)"; \
+      $(SED) -n -e "/^LaTeX Warning:/,/^$$/p" $(BASE).log | \
+        $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" 1>&2; \
+      exit 1; \
+    fi; \
+  done;
+
+# DVI -> PDF
+# 出力時のログは.logファイルへ追加出力
+DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
+COMPILE.dvi = \
+  $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
+    ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
+
 # TeX -> aux
 %.aux: %.tex
 	@$(COMPILE.tex)
@@ -276,6 +276,26 @@ endif
 ######################################################################
 # ファイルリストファイル（.fls）作成
 ######################################################################
+
+# .flsファイル作成用の一時ディレクトリー
+FLSDIR := .fls.temp
+
+# $(BASE).flsファイルの作成
+FLSCMD = $(LATEX) -interaction=nonstopmode -recorder -output-directory=$(FLSDIR) $(BASE).tex
+
+GENERETE.fls = \
+  if test ! -e $(FLSDIR); then \
+    $(MKDIR) $(FLSDIR); \
+  fi; \
+  $(FLSCMD) 1>/dev/null 2>&1; \
+  $(SED) -e 's|$(FLSDIR)/||g' $(FLSDIR)/$(BASE).fls >$(BASE).fls; \
+  if test -e $(BASE).fls; then \
+    $(ECHO) '$(BASE).fls is generated.'; \
+    $(RM) -r $(FLSDIR); \
+  else \
+    $(ECHO) '$(BASE).fls is not generated.' 1>&2; \
+    exit 1; \
+  fi
 
 %.fls: %.tex
 	@-$(GENERETE.fls)
@@ -323,7 +343,7 @@ CMPPREV = $(CMP) $< $@ && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
 # 索引用中間ファイル作成コマンド
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
 
-COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg; exit 1)
+COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg 1>&2; exit 1)
 
 # .tex -> .idx
 %.idx: %.tex
@@ -345,7 +365,7 @@ COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 # 文献リスト用中間ファイル作成コマンド
 BIBTEXCMD = $(BIBTEX) $(BIBTEXFLAG) $(BASE).aux
 
-COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg; exit 1)
+COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg 1>&2; exit 1)
 
 # TeX -> .aux -> .bib
 %.bbl: %.tex
@@ -379,7 +399,7 @@ COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 
 # 警告
 tex-warn:
-	@$(ECHO) "check current directory, or set TEXTARGET in Makefile."
+	@($(ECHO) "check current directory, or set TEXTARGET in Makefile." 1>&2)
 
 # すべての画像ファイルに対してextractbbを実行
 tex-xbb:
