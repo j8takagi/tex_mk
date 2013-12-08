@@ -88,9 +88,13 @@ BASE = $(basename $<)
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
 
+# エラー発生時、ログのエラー部分を行頭に「<TeXファイル名>:<行番号>:」を付けて表示する
 COMPILE.tex = \
   $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || \
-  ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log | $(SED) -e 's/.* line \([0-9]*\) .*/$(BASE).tex:\1: &/g'; exit 1)
+  ( \
+    $(SED) -n -e '/^!/,/^$$/p' $(BASE).log | \
+    $(SED) -e 's/.*\s*l\(ine \|\.\)\([0-9]*\) .*/$(BASE).tex:\2: &/'; \
+    exit 1)
 
 # 相互参照未定義の警告
 WARN_UNDEFREF := There were undefined references.
