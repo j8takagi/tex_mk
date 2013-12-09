@@ -159,7 +159,7 @@ BIBDBre = $(eval BIBDB := \
       $(ECHO) '# LaTeX Intermediate Files'; \
       $(ECHO) '#'; \
       $(ECHO) '# $$(COMPILE.tex) := $(LATEXCMD)'; \
-      $(ECHO) '# $$(COMPILES.tex) := $(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))'; \
+      $(ECHO) '# $$(COMPILES.tex) := $(subst $(EXITWARN),exit 1,$(subst $(EXITNOWARN),exit 0,$(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))))'; \
       $(ECHO) '#'; \
       $(ECHO) '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))'; \
       $(ECHO) '	@$$(COMPILE.tex)'; \
@@ -229,23 +229,29 @@ WARN_UNDEFREF := There were undefined references.
 CNT := 3
 CNTMSG := $(LATEX) is run $(CNT) times, but there are still undefined references.
 
+EXITNOWARN = \
+  if test $$? -eq 1; then \
+    exit 0; \
+  else \
+    exit $$?; \
+  fi
+
+EXITWARN = \
+  $(ECHO) "$(CNTMSG)" 1>&2; \
+  $(SED) -n -e "/^LaTeX Warning:/,/^$$/p" $(BASE).log | \
+    $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" 1>&2; \
+  exit 1
+
 COMPILES.tex = \
   for i in `$(SEQ) 0 $(CNT)`; do \
     if test $$i -lt $(CNT); then \
       if $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log; then \
         $(COMPILE.tex); \
       else \
-        if test $$? -eq 1; then \
-          exit 0; \
-        else \
-          exit $$?; \
-        fi \
+        $(EXITNOWARN); \
       fi; \
     else \
-      $(ECHO) "$(CNTMSG)"; \
-      $(SED) -n -e "/^LaTeX Warning:/,/^$$/p" $(BASE).log | \
-        $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" 1>&2; \
-      exit 1; \
+      $(EXITWARN); \
     fi; \
   done;
 
