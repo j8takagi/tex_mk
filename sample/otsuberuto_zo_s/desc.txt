@@ -1,0 +1,1 @@
+分割されたLaTeXファイル。元は、青空文庫の宮沢 賢治「オツベルと象」（http://www.aozora.gr.jp/cards/000081/card466.html）のLaTeXファイル（otsuberuto_zo）。

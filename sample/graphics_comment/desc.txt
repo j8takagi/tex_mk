@@ -1,0 +1,1 @@
+通常の\includegraphics命令による画像挿入と、コメントやverbatim環境内などの\includegraphics命令（画像挿入しない）を含むLaTeXファイル

@@ -1,0 +1,11 @@
+\documentclass{jsarticle}
+\begin{document}
+\cite{jtexbook}は、{\TeX}の原典。
+
+\cite{jlatexbook}は、{\LaTeX}の原典。
+
+\cite{okumura:bibunsho6}は、{\TeX}および{\LaTeX}の日本語環境での使い方や最新情報が記載されている。
+
+\bibliographystyle{jplain}
+\bibliography{ref}
+\end{document}
