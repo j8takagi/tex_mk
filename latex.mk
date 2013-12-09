@@ -119,6 +119,7 @@ LATEXINTFILES_PREV = $(addsuffix _prev,$(LATEXINTFILES))
 TEXFILES = $(filter %.tex,$(INPUTFILES))
 
 # \includegraphicsで読み込まれる画像ファイルを$(BASE).texと$(TEXFILES)、および.flsファイルから取得する
+# 取得は、1回のmake実行につき1回だけ行われる
 GRAPHICFILES = $(GRAPHICFILESre)
 
 GRAPHICFILESre = $(eval GRAPHICFILES := \
@@ -127,7 +128,7 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
       $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
       $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\includegraphics\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' \
+      $(SED) -n -e 's/.*\\includegraphics\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/p' \
     ) \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
   ))
@@ -136,6 +137,7 @@ GRAPHICFILESre = $(eval GRAPHICFILES := \
 OTHERFILES = $(sort $(filter-out %.aux $(LATEXINTFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
+# 取得は、1回のmake実行につき1回だけ行われる
 BIBDB = $(BIBDBre)
 
 BIBDBre = $(eval BIBDB := \
@@ -143,16 +145,16 @@ BIBDBre = $(eval BIBDB := \
       $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
       $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
       $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\bibliography\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/pg' | \
+      $(SED) -n -e 's/.*\\bibliography{\([^}]*\)}$$/\1/p' | \
       $(SED) -e 's/,/ /g' \
    )))))
 
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
-	@$(foreach i,0 1,$(ECHO) "Makefiles variable -- LATEXINTFILES=$(LATEXINTFILES) TEXFILES=$(TEXFILES) GRAPHICFILES=$(GRAPHICFILES) BIBDB=$(BIBDB)" $(if $(filter 0,$i),>/dev/null);)
+	@$(foreach i,0 1,$(ECHO) "Makefiles variable -- TEXFILES=$(TEXFILES) LATEXINTFILES=$(LATEXINTFILES) GRAPHICFILES=$(GRAPHICFILES) BIBDB=$(BIBDB)" $(if $(filter 0,$i),>/dev/null);)
     # .dファイルの依存関係
-	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls' >$@
+	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls $(TEXFILES)' >$@
     # 中間ファイルの依存関係
 	$(if $(sort $(LATEXINTFILES) $(BIBDB)),@( \
       $(ECHO); \
