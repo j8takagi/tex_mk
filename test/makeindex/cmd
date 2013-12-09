@@ -1,0 +1,1 @@
+cd ../../sample/makeindex && make -s distclean >/dev/null && make -s all

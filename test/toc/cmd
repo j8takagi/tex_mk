@@ -1,0 +1,1 @@
+cd ../../sample/toc && make -s distclean && make -s all

@@ -1,0 +1,1 @@
+cd ../../sample/sanposhojo && make -s distclean && make -s all

@@ -1,0 +1,1 @@
+cd ../../sample/simple && make -s distclean >/dev/null && make -s all

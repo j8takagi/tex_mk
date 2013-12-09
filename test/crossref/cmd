@@ -1,0 +1,1 @@
+cd ../../sample/crossref && make -s distclean && make -s all

@@ -1,0 +1,1 @@
+../../sample/otsuberuto_zo/desc.txt

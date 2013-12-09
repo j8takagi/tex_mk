@@ -1,0 +1,1 @@
+cd ../../sample/pdfbookmarks && make -s distclean >/dev/null && make -s all

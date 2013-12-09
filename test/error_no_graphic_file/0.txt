@@ -1,0 +1,1 @@
+make: *** No rule to make target `error_no_graphic_file.pdf'.  Stop.

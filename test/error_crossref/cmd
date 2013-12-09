@@ -1,0 +1,1 @@
+cd ../../sample/error_crossref && make -s distclean && make -s all 2>&1 | sed -e 's/make\[[0-9]*\]/make/g'
