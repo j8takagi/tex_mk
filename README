@@ -1,0 +1,21 @@
+latex.mk
+LaTeX処理（コンパイル）を行う
+
+== 使い方 ==
+1. texソースファイルと同じディレクトリーに本ファイル（latex.mk）をコピーする
+
+2. 「Makefileのサンプル」のような内容で、texソースファイルと同じディレクトリーにMakefileを作成する
+
+3. texソースファイルと同じディレクトリーで、make コマンドを実行する
+
+
+=== Makefileのサンプル ===
+TEXTARGETS := report.tex
+
+all: $(TEXTARGETS)
+
+include latex.mk
+
+clean: tex-clean
+
+distclean: tex-distclean

@@ -1,17 +1,4 @@
 # latex.mk
-# LaTeX処理（コンパイル）を行う
-#
-# == 使い方 ==
-# 1. texソースファイルと同じディレクトリーに本ファイル（latex.mk）をコピーする
-# 2. Makefileに変数TEXTARGETS と「include latex.mk」を記述する
-# 3. texソースファイルと同じディレクトリーで、make コマンドを実行する
-#
-# === Makefile -- sample ===
-# TEXTARGETS := report.tex
-#
-# all: $(TEXTARGETS)
-#
-# include latex.mk
 
 ######################################################################
 # 使用するシェルコマンドの定義
