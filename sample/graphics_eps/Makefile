@@ -16,18 +16,18 @@ all:
 graphics_eps_1.pdf: rebase
 	@$(ECHO) '---------- $@: $^ ----------'
 	@$(MAKE) -s graphics_eps.pdf
-	$(CP) -v graphics_eps.pdf $@
+	@$(CP) -v graphics_eps.pdf $@
 
 graphics_eps_2.pdf: update
 	@$(ECHO) '---------- $@: $^ ----------'
 	@$(MAKE) -s graphics_eps.pdf
-	$(CP) -v graphics_eps.pdf $@
+	@$(CP) -v graphics_eps.pdf $@
 
 rebase:
-	$(CMP) tiger.eps.base tiger.eps || $(CP) tiger.eps.base tiger.eps
+	@($(CMP) tiger.eps.base tiger.eps || $(CP) tiger.eps.base tiger.eps)
 
 update:
-	$(CONVERT) Panthera_tigris_tigris.jpg tiger.eps
+	@$(CONVERT) Panthera_tigris_tigris.jpg tiger.eps
 
 include latex.mk
 

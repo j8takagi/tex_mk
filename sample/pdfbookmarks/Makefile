@@ -31,7 +31,7 @@ pdfbookmarks.tex.6th.patch:
 	@$(DIFF) -u pdfbookmarks.tex pdfbookmarks.tex.6th >$@ || exit 0
 
 rebase:
-	$(CMP) pdfbookmarks.tex.5th pdfbookmarks.tex || $(CP) -v pdfbookmarks.tex.5th pdfbookmarks.tex
+	$(CMP) pdfbookmarks.tex.5th pdfbookmarks.tex || $(CP) pdfbookmarks.tex.5th pdfbookmarks.tex
 
 include latex.mk
 

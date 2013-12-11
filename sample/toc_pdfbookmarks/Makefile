@@ -43,12 +43,12 @@ toc_pdfbookmarks.tex.6th.patch: rebase
 	@$(DIFF) -u toc_pdfbookmarks.tex toc_pdfbookmarks.tex.6th >$@ || exit 0
 
 rebase:
-	$(CMP) toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex || $(CP) -v toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex
+	$(CMP) toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex || $(CP) toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex
 
 include latex.mk
 
-clean: tex-clean
+clean: rebase tex-clean
 
-distclean: rebase tex-distclean
+distclean: clean tex-distclean
 	$(RM) *.patch
 	$(RM) toc_pdfbookmarks_*.pdf

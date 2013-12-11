@@ -43,7 +43,7 @@ toc.tex.6th.patch: rebase
 	@$(DIFF) -u toc.tex toc.tex.6th >$@ || exit 0
 
 rebase:
-	$(CMP) toc.tex.5th toc.tex || $(CP) -v toc.tex.5th toc.tex
+	$(CMP) toc.tex.5th toc.tex || $(CP) toc.tex.5th toc.tex
 
 include latex.mk
 

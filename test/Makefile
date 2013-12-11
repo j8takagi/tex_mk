@@ -124,6 +124,8 @@ clean:
 	@$(call make_targets,$(TESTS),$@)
 	@$(RM) $(GROUP_RES_FILES);
 
+distclean: clean
+
 time-clean:
 	@$(call make_targets,$(TESTS),$@)
 	@$(RM) $(GROUP_TIME_FILE);

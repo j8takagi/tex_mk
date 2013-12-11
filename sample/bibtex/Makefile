@@ -35,7 +35,7 @@ bib-update: bib-rebase
 	$(CAT) ref_add.bib >>ref.bib
 
 bib-rebase:
-	$(CMP) ref.bib.base ref.bib || $(CP) -v ref.bib.base ref.bib
+	@($(CMP) ref.bib.base ref.bib || $(CP) ref.bib.base ref.bib)
 
 body-update: bibtex.tex.2nd.patch
 	@$(PATCH) <$<
@@ -44,7 +44,7 @@ bibtex.tex.2nd.patch: rebase
 	@$(DIFF) -u bibtex.tex bibtex.tex.2nd >$@ || exit 0
 
 body-rebase:
-	$(CMP) bibtex.tex.base bibtex.tex || $(CP) -v bibtex.tex.base bibtex.tex
+	@($(CMP) bibtex.tex.base bibtex.tex || $(CP) bibtex.tex.base bibtex.tex)
 
 clean: tex-clean
 

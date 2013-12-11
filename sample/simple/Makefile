@@ -26,7 +26,7 @@ update:
 	$(SED) -i.bak -e 's/，/、/g' -e 's/．/。/g' simple.tex
 
 rebase:
-	$(CMP) simple.tex.base simple.tex || $(CP) -v simple.tex.base simple.tex
+	$(CMP) simple.tex.base simple.tex || $(CP) simple.tex.base simple.tex
 
 include latex.mk
 
