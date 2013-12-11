@@ -1,4 +1,6 @@
 # latex.mk
+# Copyright 2013, j8takagi.
+# latex.mk is licensed under the MIT license.
 
 ######################################################################
 # 使用するシェルコマンドの定義
@@ -13,6 +15,7 @@ GREP := grep
 MKDIR := mkdir
 SED := sed
 SEQ := seq
+TR := tr
 
 # LaTeXコマンド
 LATEX := platex
@@ -105,18 +108,36 @@ LATEXINTFILES_PREV = $(addsuffix _prev,$(LATEXINTFILES))
 # \includeや\inputで読み込まれるTeXファイルを.flsから取得する
 TEXFILES = $(filter %.tex,$(INPUTFILES))
 
+# LaTeXコマンド（\\<英字>[ ]{ }）を、コメント、verbatim環境、verb| | 以外の部分から取得する
+# 取得は、1回のmake実行につき1回だけ行われる
+LATEXSRCCMD = $(LATEXSRCCMDre)
+
+LATEXSRCCMDre = $(eval LATEXSRCCMD := \
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n -e 's/.*\\\([a-zA-Z]*\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}\)$$/\1/p' \
+  ))
+
+# LaTeXコマンドから、ブレース{}で囲まれた引数を取得する
+# 用例: $(call latexcmd_bracearg,cmd)
+define latexcmd_bracearg
+  $(strip $(shell \
+    $(ECHO) '$(LATEXSRCCMD)' | \
+      $(SED) -e 'y/} /}\n/' | \
+      $(SED) -n -e '/$1[\[{]/p' | \
+      $(SED) -e 's/$1\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}/\2/' \
+  ))
+endef
+
 # \includegraphicsで読み込まれる画像ファイルを$(BASE).texと$(TEXFILES)、および.flsファイルから取得する
 # 取得は、1回のmake実行につき1回だけ行われる
 GRAPHICFILES = $(GRAPHICFILESre)
 
 GRAPHICFILESre = $(eval GRAPHICFILES := \
   $(sort \
-    $(shell \
-      $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\includegraphics\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/p' \
-    ) \
+    $(call latexcmd_bracearg,includegraphics) \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
   ))
 
@@ -128,63 +149,82 @@ OTHERFILES = $(sort $(filter-out %.aux $(LATEXINTFILES) $(TEXFILES) $(GRAPHICFIL
 BIBDB = $(BIBDBre)
 
 BIBDBre = $(eval BIBDB := \
-  $(addsuffix .bib,$(basename $(sort $(shell \
-      $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILES) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\bibliography{\([^}]*\)}$$/\1/p' | \
-      $(SED) -e 's/,/ /g' \
-   )))))
+  $(addsuffix .bib,$(basename \
+    $(shell $(ECHO) $(call latexcmd_bracearg,bibliography) | $(TR) ',' ' ') \
+  )))
+
+# .dファイルの依存関係
+dfiledep = '$(BASE).d: $(strip $(BASE).tex $(BASE).fls $(TEXFILES))'
+
+# TeXファイルの依存関係
+texfilesdep = \
+  '\n' \
+  '\# Files called from \include or \input - .tex\n' \
+  '$(BASE).aux: $(TEXFILES)'
+
+# LaTeX中間ファイルの依存関係
+latexintfilesdep = \
+  '\n' \
+  '\# LaTeX Intermediate Files\n' \
+  '\#\n' \
+  '\# $$(COMPILE.tex) := $(LATEXCMD)\n' \
+  '\# $$(COMPILES.tex) := $(subst $(EXITWARN),exit 1,$(subst $(EXITNOTFOUND),exit 0,$(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))))\n' \
+  '\#\n' \
+  '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))\n' \
+  '\t@$$(COMPILE.tex)\n' \
+  '\n' \
+  '$(BASE).dvi:: $(BASE).aux\n' \
+  '\t@$$(COMPILES.tex)'
+
+# 画像ファイルの依存関係
+graphicfilesdep = \
+  '\n' \
+  '\# Files called from \includegraphics - $(GRAPHICSEXT)\n' \
+  '$(BASE).aux: $(GRAPHICFILES)'
+
+# .xbbファイルの依存関係
+xbbfilesdep = \
+  '\n' \
+  '\# .xbb files with: $(filter-out .eps,$(GRAPHICSEXT))\n' \
+  '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'
+
+# 文献リスト作成用ファイルの依存関係
+bibdbdep = \
+  '\n' \
+  '\# Bibliography files: .aux, BIBDB -> .bbl -> .div\n' \
+  '$(BASE).bbl: $(BIBDB) $(BASE).tex'
+
+# そのほかのファイル（TeXシステム以外のクラスファイル・スタイルファイルなど）の依存関係
+otherfilesdep = \
+  '\n' \
+  '\# Other files\n' \
+  '$(BASE).aux: $(OTHERFILES)'
+
+# putsdep: 依存関係を出力する
+# 用例: $(call putsdep,text)
+define putsdep
+  $(ECHO) -e $1 | $(SED) -e 's/^ \{1,\}//'
+endef
 
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
-	@$(foreach i,0 1,$(ECHO) "Makefiles variable -- TEXFILES=$(TEXFILES) LATEXINTFILES=$(LATEXINTFILES) GRAPHICFILES=$(GRAPHICFILES) BIBDB=$(BIBDB)" $(if $(filter 0,$i),>/dev/null);)
+	@$(ECHO) ' $(TEXFILES) $(LATEXINTFILES) $(LATEXSRCCMD) $(GRAPHICFILES) $(BIBDB)' >/dev/null
+	@$(ECHO) -e 'Makefiles variable\n  TEXFILES=$(TEXFILES)\n  LATEXINTFILES=$(LATEXINTFILES)\n  GRAPHICFILES=$(GRAPHICFILES)\n  BIBDB=$(BIBDB)'
     # .dファイルの依存関係
-	@$(ECHO) '$(BASE).d: $(BASE).tex $(BASE).fls $(TEXFILES)' >$@
+	@$(call putsdep,$(dfiledep)) >$@
+    # TeXファイルの依存関係
+	$(if $(TEXFILES),@$(call putsdep,$(texfilesdep)) >>$@)
     # 中間ファイルの依存関係
-	$(if $(sort $(LATEXINTFILES) $(BIBDB)),@( \
-      $(ECHO); \
-      $(ECHO) '# LaTeX Intermediate Files'; \
-      $(ECHO) '#'; \
-      $(ECHO) '# $$(COMPILE.tex) := $(LATEXCMD)'; \
-      $(ECHO) '# $$(COMPILES.tex) := $(subst $(EXITWARN),exit 1,$(subst $(EXITNOWARN),exit 0,$(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))))'; \
-      $(ECHO) '#'; \
-      $(ECHO) '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))'; \
-      $(ECHO) '	@$$(COMPILE.tex)'; \
-      $(ECHO); \
-      $(ECHO) '$(BASE).dvi:: $(BASE).aux'; \
-      $(ECHO) '	@$$(COMPILES.tex)'; \
-    ) >>$@)
-    # \includeや\inputで読み込まれるTeXファイルの依存関係
-	$(if $(TEXFILES),@( \
-      $(ECHO); \
-      $(ECHO) '# Files called from \include or \input - .tex'; \
-      $(ECHO) '$(BASE).aux: $(TEXFILES)'; \
-    ) >>$@)
+	$(if $(strip $(LATEXINTFILES) $(BIBDB)), @$(call putsdep,$(latexintfilesdep)) >>$@)
     # 画像ファイルの依存関係
-	$(if $(GRAPHICFILES),@( \
-      $(ECHO); \
-      $(ECHO) '# IncludeGraphic Files - .pdf, .eps, .jpeg/.jpg, .png'; \
-      $(ECHO) '#           .xbb Files - .pdf, .jpeg/.jpg, .png'; \
-      $(ECHO) '$(BASE).aux: $(GRAPHICFILES)'; \
-      $(if $(filter-out %.eps,$(GRAPHICFILES)), \
-        $(ECHO); \
-        $(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'; \
-      ) \
-    ) >>$@)
+	$(if $(GRAPHICFILES),@$(call putsdep,$(graphicfilesdep)) >>$@)
+    # バウンディング情報ファイルの依存関係
+	$(if $(filter-out %.eps,$(GRAPHICFILES)),@$(call putsdep,$(xbbfilesdep)) >>$@)
     # 文献リストファイルの依存関係
-	$(if $(BIBDB),@( \
-        $(ECHO); \
-        $(ECHO) '# Bibliography files: .aux, BIBDB -> .bbl -> .div'; \
-        $(ECHO) '$(BASE).bbl: $(BIBDB) $(BASE).tex'; \
-      ) >>$@)
+	$(if $(BIBDB),@$(call putsdep,$(bibdbdep)) >>$@)
     # そのほかのファイル（TEXMFROOT以外にあるスタイルファイルなど）の依存関係
-	$(if $(OTHERFILES),@( \
-      $(ECHO); \
-      $(ECHO) '# Other files'; \
-      $(ECHO) '$(BASE).aux: $(OTHERFILES)'; \
-    ) >>$@)
+	$(if $(OTHERFILES),@$(call putsdep,$(otherfilesdep)) >>$@)
 	@$(ECHO) '$@ is generated by scanning $(BASE).tex and $(BASE).fls.'
 
 # 変数TEXTARGETSで指定されたターゲットファイルに対応する
@@ -214,11 +254,11 @@ COMPILE.tex = \
 WARN_UNDEFREF := There were undefined references.
 
 # LaTeX処理
-# ログファイルに警告がある場合は警告がなくなるまで、最大CNTで指定された回数分、処理を実行する
-CNT := 3
-CNTMSG := $(LATEX) is run $(CNT) times, but there are still undefined references.
+# ログファイルに警告がある場合は警告がなくなるまで、最大LIMで指定された回数分、処理を実行する
+LIM := 3
+LIMMSG := $(LATEX) is run $(LIM) times, but there are still undefined references.
 
-EXITNOWARN = \
+EXITNOTFOUND = \
   if test $$? -eq 1; then \
     exit 0; \
   else \
@@ -226,19 +266,15 @@ EXITNOWARN = \
   fi
 
 EXITWARN = \
-  $(ECHO) "$(CNTMSG)" 1>&2; \
+  $(ECHO) "$(LIMMSG)" 1>&2; \
   $(SED) -n -e "/^LaTeX Warning:/,/^$$/p" $(BASE).log | \
     $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" 1>&2; \
   exit 1
 
 COMPILES.tex = \
-  for i in `$(SEQ) 0 $(CNT)`; do \
-    if test $$i -lt $(CNT); then \
-      if $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log; then \
-        $(COMPILE.tex); \
-      else \
-        $(EXITNOWARN); \
-      fi; \
+  for i in `$(SEQ) 0 $(LIM)`; do \
+    if test $$i -lt $(LIM); then \
+      $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log || $(EXITNOTFOUND) && $(COMPILE.tex); \
     else \
       $(EXITWARN); \
     fi; \
