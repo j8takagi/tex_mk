@@ -1,0 +1,7 @@
+x = seq(-3.5, 1.5, by=0.1)
+y = dnorm(x)
+par(las=1)
+par(mgp=c(2,0.8,0))
+plot(NULL, xlim=c(-3.5,3.5), ylim=c(0,0.4), xlab="", ylab="")
+polygon(c(x,rev(x)), c(rep(0,51),rev(y)), col="gray")
+curve(dnorm, lwd=2, add=TRUE)
