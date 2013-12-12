@@ -76,7 +76,7 @@ endif
 
 %.tikz.R: %.R
 	@$(ECHO) 'library("tikzDevice")' >$@
-	@$(ECHO) 'tikz("$(subst .R,.tex,$<)", width=7, height=5)' >>$@
+	@$(ECHO) 'tikz("$(subst .R,.tex,$<)")' >>$@
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
 

@@ -6,7 +6,7 @@ include R.mk
 
 include latex.mk
 
-LATEX :=uplatex
+LATEX := uplatex
 
 clean: tex-clean R-clean
 
