@@ -76,7 +76,7 @@ BASE = $(basename $<)
 # .dファイルには、LaTeX処理での依存関係が記述される
 ######################################################################
 
-# .flsファイルから、INPUTファイルを取得。ただし、$TEXMFDISTのファイルを除く
+# .flsファイルから、INPUTファイルを取得。ただし、$TEXMFROOTのファイルを除く
 # 取得は、1回のmake実行につき1回だけ行われる
 INPUTFILES = $(INPUTFILESre)
 
@@ -86,55 +86,67 @@ INPUTFILESre = $(eval INPUTFILES := \
     $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
   ))))
 
-# .flsファイルから、OUTPUTファイルを取得。ただし、$TEXMFDISTのファイルを除く
+# .flsファイルから、OUTPUTファイルを取得。ただし、$TEXMFROOTのファイルを除く
 # 取得は、1回のmake実行につき1回だけ行われる
 OUTPUTFILES =  $(OUTFILESre)
 
 OUTFILESre = $(eval OUTPUTFILES := \
-  $(sort $(filter-out $(BASE).aux $(BASE).dvi $(BASE).log,$(shell \
-    $(SED) -n -e 's/^OUTPUT \(.\{1,\}\)/\1/p' $(BASE).fls | \
-    $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
+  $(sort $(filter-out $(BASE).aux $(BASE).dvi $(BASE).log, \
+    $(shell \
+      $(SED) -n -e 's/^OUTPUT \(.\{1,\}\)/\1/p' $(BASE).fls | \
+      $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
   ))))
 
-LATEXINTFILES_PREV = $(addsuffix _prev,$(LATEXINTFILES))
+# 引数で指定されたファイルから、LaTeXコマンドを取得する
+# 用例: $(call latexsrc_cmd,files)
+define latexsrc_cmd
+  $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $1 | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n -e 's/.*\\\([a-zA-Z]*\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}\)$$/\1/p' \
+  )
+endef
 
 # \includeや\inputで読み込まれるTeXファイルを.flsから取得する
 TEXFILESFLS = $(filter %.tex,$(INPUTFILES))
+
+# \includeや\inputで読み込まれるTeXファイルをソースから取得する
+TEXFILES = $(TEXFILESre)
+
+TEXFILESre = $(eval TEXFILES := \
+  $(sort $(addsuffix .tex,$(basename \
+    $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILESFLS) | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n -e 's/.*\\input{\([^}]*\)}$$/\1/p' -e 's/.*\\include{\([^}]*\)}$$/\1/p' \
+  )))))
+
+
+# 引数filelistで指定されたファイルリストから、実在するものを取得する
+# 用例: $(call valid_files,filelist)
+valid_files = $(foreach f,$1,$(shell if test -s $f; then $(ECHO) $f; fi))
 
 # LaTeXコマンド（\\<英字>[ ]{ }）を、コメント、verbatim環境、verb| | 以外の部分から取得する
 # 取得は、1回のmake実行につき1回だけ行われる
 LATEXSRCCMD = $(LATEXSRCCMDre)
 
 LATEXSRCCMDre = $(eval LATEXSRCCMD := \
-  $(shell \
-    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILESFLS) | \
+    $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(call valid_files,$(TEXFILES)) | \
       $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
       $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
       $(SED) -n -e 's/.*\\\([a-zA-Z]*\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}\)$$/\1/p' \
   ))
 
 # LaTeXコマンドから、ブレース{}で囲まれた引数を取得する
-# 用例: $(call latexcmd_bracearg,cmd)
-define latexcmd_bracearg
+# 用例: $(call latexsrccmd_bracearg,cmd)
+define latexsrccmd_bracearg
   $(strip $(shell \
     $(ECHO) '$(LATEXSRCCMD)' | \
       $(SED) -e 'y/} /}\n/' | \
       $(SED) -n -e '/$1[\[{]/p' | \
-      $(SED) -e 's/$1\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}/\2/' \
+      $(SED) -e 's/$1\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/' \
   ))
 endef
-
-# \includeや\inputで読み込まれるTeXファイルをソースから取得する
-TEXFILES = $(TEXFILESre)
-
-TEXFILESre = $(eval TEXFILES := \
-  $(sort \
-    $(addsuffix .tex,$(basename \
-      $(call latexcmd_bracearg,include) \
-      $(call latexcmd_bracearg,input) \
-    )) \
-    $(TEXFILESFLS) \
-  ))
 
 # $(BASE).texで読み込まれる中間ファイルを.flsから取得する
 # .idxは、.indへ置換
@@ -143,13 +155,15 @@ LATEXINTFILES = \
     $(filter $(addprefix $(BASE),$(LATEXINTEXT)),$(INPUTFILES) $(OUTPUTFILES)) \
   ))
 
+LATEXINTFILES_PREV = $(addsuffix _prev,$(LATEXINTFILES))
+
 # \includegraphicsで読み込まれる画像ファイルを$(BASE).texと$(TEXFILES)、および.flsファイルから取得する
 # 取得は、1回のmake実行につき1回だけ行われる
 GRAPHICFILES = $(GRAPHICFILESre)
 
 GRAPHICFILESre = $(eval GRAPHICFILES := \
   $(sort \
-    $(call latexcmd_bracearg,includegraphics) \
+    $(call latexsrccmd_bracearg,includegraphics) \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
   ))
 
@@ -162,7 +176,7 @@ BIBDB = $(BIBDBre)
 
 BIBDBre = $(eval BIBDB := \
   $(addsuffix .bib,$(basename \
-    $(shell $(ECHO) $(call latexcmd_bracearg,bibliography) | $(TR) ',' ' ') \
+    $(shell $(ECHO) $(call latexsrccmd_bracearg,bibliography) | $(TR) ',' ' ') \
   )))
 
 # .dファイルの依存関係
@@ -221,7 +235,7 @@ endef
 # 依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
-	@$(ECHO) ' $(TEXFILESFLS) $(LATEXSRCCMD) $(TEXFILES) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBDB)' >/dev/null
+	@$(ECHO) ' $(TEXFILESFLS) $(TEXFILES) $(LATEXSRCCMD) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBDB)' >/dev/null
 	@$(ECHO) -e 'Makefiles variable\n  TEXFILES=$(TEXFILES)\n  LATEXINTFILES=$(LATEXINTFILES)\n  GRAPHICFILES=$(GRAPHICFILES)\n  BIBDB=$(BIBDB)'
     # .dファイルの依存関係
 	@$(call putsdep,$(dfiledep)) >$@
