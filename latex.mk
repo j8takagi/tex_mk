@@ -313,7 +313,7 @@ GENERETE.fls = \
     $(ECHO) '$(BASE).fls is generated.'; \
     $(RM) -r $(FLSDIR); \
   else \
-    $(ECHO) '$(BASE).fls is not generated.' 1>&2; \
+    $(ECHO) '$(BASE).fls is not generated.' >&2; \
     exit 1; \
   fi
 
@@ -361,7 +361,7 @@ CMPPREV = $(CMP) $< $@ && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
 # 索引用中間ファイル作成コマンド
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
 
-COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg 1>&2; exit 1)
+COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).ilg >&2; exit 1)
 
 # .tex -> .idx
 %.idx: %.tex
@@ -383,7 +383,7 @@ COMPILE.idx = $(ECHO) $(MENDEXCMD); $(MENDEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 # 文献リスト用中間ファイル作成コマンド
 BIBTEXCMD = $(BIBTEX) $(BIBTEXFLAG) $(BASE).aux
 
-COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg 1>&2; exit 1)
+COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BASE).blg >&2; exit 1)
 
 # TeX -> .aux -> .bib
 %.bbl: %.tex
@@ -417,7 +417,7 @@ COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 
 # 警告
 tex-warn:
-	@($(ECHO) "check current directory, or set TEXTARGET in Makefile." 1>&2)
+	@($(ECHO) "check current directory, or set TEXTARGET in Makefile." >&2)
 
 # すべての画像ファイルに対してextractbbを実行
 tex-xbb:
