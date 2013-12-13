@@ -5,7 +5,6 @@
 ######################################################################
 # 使用するシェルコマンドの定義
 ######################################################################
-
 # シェルコマンド
 CAT := cat
 CMP := cmp -s
@@ -15,7 +14,6 @@ GREP := grep
 MKDIR := mkdir
 SED := sed
 SEQ := seq
-TR := tr
 
 # LaTeXコマンド
 LATEX := platex
@@ -41,7 +39,6 @@ endif
 ######################################################################
 # 拡張子
 ######################################################################
-
 # .aux、.fls以外のLaTeX中間ファイルの拡張子
 #   .bbl: 文献リスト。作成方法はパターンルールで定義
 #   .glo: 用語集。\glossaryがあればTeX処理で生成
@@ -75,7 +72,6 @@ BASE = $(basename $<)
 # .dファイルの生成と読み込み
 # .dファイルには、LaTeX処理での依存関係が記述される
 ######################################################################
-
 # .flsファイルから、INPUTファイルを取得。ただし、$TEXMFROOTのファイルを除く
 # 取得は、1回のmake実行につき1回だけ行われる
 INPUTFILES = $(INPUTFILESre)
@@ -97,56 +93,30 @@ OUTFILESre = $(eval OUTPUTFILES := \
       $(GREP) -v `$(KPSEWHICH) -expand-var '$$TEXMFROOT'` \
   ))))
 
-# 引数で指定されたファイルから、LaTeXコマンドを取得する
-# 用例: $(call latexsrc_cmd,files)
-define latexsrc_cmd
-  $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $1 | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\\([a-zA-Z]*\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}\)$$/\1/p' \
-  )
-endef
-
 # \includeや\inputで読み込まれるTeXファイルを.flsから取得する
 TEXFILESFLS = $(filter %.tex,$(INPUTFILES))
+
+# filesで指定したファイルのコメント・verbatim環境・verb| | 以外の部分から、
+# cmdsで指定したLaTeXコマンド（\\cmd[ ]{ }）のブレース{}で囲まれた引数を取得する
+# コンマで区切られた引数は、コンマをスペースに置換する
+# 用例: $(call latexsrccmd_bracearg,files,cmds)
+define latexsrccmd_bracearg
+  $(shell \
+    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(wildcard $1) | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+      $(SED) -n $(foreach c,$2,-e 's/.*\\$c\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/p' ) | \
+      $(SED) -e 'y/,/ /'
+  )
+endef
 
 # \includeや\inputで読み込まれるTeXファイルをソースから取得する
 TEXFILES = $(TEXFILESre)
 
 TEXFILESre = $(eval TEXFILES := \
   $(sort $(addsuffix .tex,$(basename \
-    $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(TEXFILESFLS) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\input{\([^}]*\)}$$/\1/p' -e 's/.*\\include{\([^}]*\)}$$/\1/p' \
-  )))))
-
-
-# 引数filelistで指定されたファイルリストから、実在するものを取得する
-# 用例: $(call valid_files,filelist)
-valid_files = $(foreach f,$1,$(shell if test -s $f; then $(ECHO) $f; fi))
-
-# LaTeXコマンド（\\<英字>[ ]{ }）を、コメント、verbatim環境、verb| | 以外の部分から取得する
-# 取得は、1回のmake実行につき1回だけ行われる
-LATEXSRCCMD = $(LATEXSRCCMDre)
-
-LATEXSRCCMDre = $(eval LATEXSRCCMD := \
-    $(shell $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(BASE).tex $(call valid_files,$(TEXFILES)) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
-      $(SED) -n -e 's/.*\\\([a-zA-Z]*\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}\)$$/\1/p' \
-  ))
-
-# LaTeXコマンドから、ブレース{}で囲まれた引数を取得する
-# 用例: $(call latexsrccmd_bracearg,cmd)
-define latexsrccmd_bracearg
-  $(strip $(shell \
-    $(ECHO) '$(LATEXSRCCMD)' | \
-      $(SED) -e 'y/} /}\n/' | \
-      $(SED) -n -e '/$1[\[{]/p' | \
-      $(SED) -e 's/$1\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/' \
-  ))
-endef
+    $(call latexsrccmd_bracearg,$(BASE).tex $(TEXFILESFLS),include input) \
+  ))))
 
 # $(BASE).texで読み込まれる中間ファイルを.flsから取得する
 # .idxは、.indへ置換
@@ -163,11 +133,11 @@ GRAPHICFILES = $(GRAPHICFILESre)
 
 GRAPHICFILESre = $(eval GRAPHICFILES := \
   $(sort \
-    $(call latexsrccmd_bracearg,includegraphics) \
+    $(call latexsrccmd_bracearg,$(BASE).tex $(TEXFILES),includegraphics) \
     $(filter $(addprefix %,$(GRAPHICSEXT)),$(INPUTFILES)) \
   ))
 
-# .flsから取得した、そのほかの読み込みファイル（.styなど）
+# .flsから取得した、そのほかの読み込みファイル（スタイル・クラスファイルなど）
 OTHERFILES = $(sort $(filter-out %.aux $(LATEXINTFILES) $(TEXFILES) $(GRAPHICFILES),$(INPUTFILES)))
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
@@ -176,20 +146,20 @@ BIBDB = $(BIBDBre)
 
 BIBDBre = $(eval BIBDB := \
   $(addsuffix .bib,$(basename \
-    $(shell $(ECHO) $(call latexsrccmd_bracearg,bibliography) | $(TR) ',' ' ') \
+    $(call latexsrccmd_bracearg,$(BASE).tex $(TEXFILES),bibliography) \
   )))
 
 # .dファイルの依存関係
-dfiledep = '$(BASE).d: $(strip $(BASE).tex $(BASE).fls $(TEXFILES))'
+DFILEDEP = '$(BASE).d: $(strip $(BASE).tex $(BASE).fls $(TEXFILES))'
 
 # TeXファイルの依存関係
-texfilesdep = \
+TEXFILESDEP = \
   '\n' \
   '\# Files called from \include or \input - .tex\n' \
   '$(BASE).aux: $(TEXFILES)'
 
 # LaTeX中間ファイルの依存関係
-latexintfilesdep = \
+LATEXINTFILESDEP = \
   '\n' \
   '\# LaTeX Intermediate Files\n' \
   '\#\n' \
@@ -203,25 +173,25 @@ latexintfilesdep = \
   '\t@$$(COMPILES.tex)'
 
 # 画像ファイルの依存関係
-graphicfilesdep = \
+GRAPHICFILESDEP = \
   '\n' \
   '\# Files called from \includegraphics - $(GRAPHICSEXT)\n' \
   '$(BASE).aux: $(GRAPHICFILES)'
 
 # .xbbファイルの依存関係
-xbbfilesdep = \
+XBBFILESDEP = \
   '\n' \
   '\# .xbb files with: $(filter-out .eps,$(GRAPHICSEXT))\n' \
   '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'
 
 # 文献リスト作成用ファイルの依存関係
-bibdbdep = \
+BIBDBDEP = \
   '\n' \
   '\# Bibliography files: .aux, BIBDB -> .bbl -> .div\n' \
   '$(BASE).bbl: $(BIBDB) $(BASE).tex'
 
-# そのほかのファイル（TeXシステム以外のクラスファイル・スタイルファイルなど）の依存関係
-otherfilesdep = \
+# そのほかのファイル（TeXシステム以外のクラス・スタイルファイルなど）の依存関係
+OTHERFILESDEP = \
   '\n' \
   '\# Other files\n' \
   '$(BASE).aux: $(OTHERFILES)'
@@ -237,26 +207,26 @@ endef
     # Makefile変数の展開
 	@$(ECHO) ' $(TEXFILESFLS) $(TEXFILES) $(LATEXSRCCMD) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBDB)' >/dev/null
 	@$(ECHO) -e 'Makefiles variable\n  TEXFILES=$(TEXFILES)\n  LATEXINTFILES=$(LATEXINTFILES)\n  GRAPHICFILES=$(GRAPHICFILES)\n  BIBDB=$(BIBDB)'
-    # .dファイルの依存関係
-	@$(call putsdep,$(dfiledep)) >$@
-    # TeXファイルの依存関係
-	$(if $(TEXFILES),@$(call putsdep,$(texfilesdep)) >>$@)
-    # 中間ファイルの依存関係
-	$(if $(strip $(LATEXINTFILES) $(BIBDB)), @$(call putsdep,$(latexintfilesdep)) >>$@)
-    # 画像ファイルの依存関係
-	$(if $(GRAPHICFILES),@$(call putsdep,$(graphicfilesdep)) >>$@)
-    # バウンディング情報ファイルの依存関係
-	$(if $(filter-out %.eps,$(GRAPHICFILES)),@$(call putsdep,$(xbbfilesdep)) >>$@)
-    # 文献リストファイルの依存関係
-	$(if $(BIBDB),@$(call putsdep,$(bibdbdep)) >>$@)
-    # そのほかのファイル（TEXMFROOT以外にあるスタイルファイルなど）の依存関係
-	$(if $(OTHERFILES),@$(call putsdep,$(otherfilesdep)) >>$@)
+    # .dファイルの依存関係を出力
+	@$(call putsdep,$(DFILEDEP)) >$@
+    # TeXファイルの依存関係を出力
+	$(if $(TEXFILES),@$(call putsdep,$(TEXFILESDEP)) >>$@)
+    # 中間ファイルの依存関係を出力
+	$(if $(strip $(LATEXINTFILES) $(BIBDB)), @$(call putsdep,$(LATEXINTFILESDEP)) >>$@)
+    # 画像ファイルの依存関係を出力
+	$(if $(GRAPHICFILES),@$(call putsdep,$(GRAPHICFILESDEP)) >>$@)
+    # バウンディング情報ファイルの依存関係を出力
+	$(if $(filter-out %.eps,$(GRAPHICFILES)),@$(call putsdep,$(XBBFILESDEP)) >>$@)
+    # 文献リストファイルの依存関係を出力
+	$(if $(BIBDB),@$(call putsdep,$(BIBDBDEP)) >>$@)
+    # そのほかのファイルの依存関係を出力
+	$(if $(OTHERFILES),@$(call putsdep,$(OTHERFILESDEP)) >>$@)
 	@$(ECHO) '$@ is generated by scanning $(strip $(BASE).tex $(TEXFILES)) and $(BASE).fls.'
 
 # 変数TEXTARGETSで指定されたターゲットファイルに対応する
 # .dファイルをインクルードし、依存関係を取得する
-# ターゲット末尾に clean、.xbb、.tex、.d が含まれている場合は除く
-ifeq (,$(filter %clean %xbb %.tex %.d %.fls %.fls_prev,$(MAKECMDGOALS)))
+# ターゲット末尾に clean、xbb、.tex、.d が含まれている場合は除く
+ifeq (,$(filter %clean %xbb %.tex %.d %.fls,$(MAKECMDGOALS)))
   -include $(addsuffix .d,$(basename $(TEXTARGETS)))
 endif
 
@@ -264,17 +234,15 @@ endif
 # dviおよびPDFファイルを生成するパターンルール
 # TeX -> dvi -> PDF
 ######################################################################
-
 # LaTeX処理（コンパイル）
 LATEXCMD = $(LATEX) -interaction=batchmode $(LATEXFLAG) $(BASE).tex
 
 # エラー発生時、ログのエラー部分を行頭に「<TeXファイル名>:<行番号>:」を付けて表示する
 COMPILE.tex = \
   $(ECHO) $(LATEXCMD); $(LATEXCMD) >/dev/null 2>&1 || \
-  ( \
-    $(SED) -n -e '/^!/,/^$$/p' $(BASE).log | \
-      $(SED) -e 's/.*\s*l\.\([0-9]*\)\s*.*/$(BASE).tex:\1: &/' 1>&2; \
-    exit 1)
+  ($(SED) -n -e '/^!/,/^$$/p' $(BASE).log | \
+     $(SED) -e 's/.*\s*l\.\([0-9]*\)\s*.*/$(BASE).tex:\1: &/' >&2; \
+   exit 1)
 
 # 相互参照未定義の警告
 WARN_UNDEFREF := There were undefined references.
@@ -284,17 +252,12 @@ WARN_UNDEFREF := There were undefined references.
 LIM := 3
 LIMMSG := $(LATEX) is run $(LIM) times, but there are still undefined references.
 
-EXITNOTFOUND = \
-  if test $$? -eq 1; then \
-    exit 0; \
-  else \
-    exit $$?; \
-  fi
+EXITNOTFOUND = if test $$? -eq 1; then exit 0; else exit $$?; fi
 
 EXITWARN = \
-  $(ECHO) "$(LIMMSG)" 1>&2; \
+  $(ECHO) "$(LIMMSG)" >&2; \
   $(SED) -n -e "/^LaTeX Warning:/,/^$$/p" $(BASE).log | \
-    $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" 1>&2; \
+    $(SED) -e "s/.*\s*line \([0-9]*\)\s*.*/$(BASE).tex:\1: &/" >&2; \
   exit 1
 
 COMPILES.tex = \
@@ -309,9 +272,10 @@ COMPILES.tex = \
 # DVI -> PDF
 # 出力時のログは.logファイルへ追加出力
 DVIPDFCMD = $(DVIPDFMX) $(DVIPDFMXFLAG) $(BASE).dvi
+
 COMPILE.dvi = \
   $(ECHO) $(DVIPDFCMD); $(DVIPDFCMD) >>$(BASE).log 2>&1 || \
-    ($(SED) -n -e '/^Output written on toc_hyperref.dvi/,$$p' $(BASE).log; exit 1)
+    ($(SED) -n -e '/^Output written on $(BASE)\.dvi/,$$p' $(BASE).log; exit 1)
 
 # TeX -> aux
 %.aux: %.tex
@@ -333,7 +297,6 @@ COMPILE.dvi = \
 ######################################################################
 # ファイルリストファイル（.fls）作成
 ######################################################################
-
 # .flsファイル作成用の一時ディレクトリー
 FLSDIR := .fls.temp
 
@@ -360,7 +323,6 @@ GENERETE.fls = \
 ######################################################################
 # LaTeX中間ファイルを生成するパターンルール
 ######################################################################
-
 # ターゲットファイルと必須ファイルを比較し、
 # 内容が異なる場合はターゲットファイルの内容を必須ファイルに置き換える
 CMPPREV = $(CMP) $< $@ && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
@@ -396,7 +358,6 @@ CMPPREV = $(CMP) $< $@ && $(ECHO) '$@ is up to date.' || $(CP) -p -v $< $@
 ######################################################################
 # 索引用中間ファイルを生成するパターンルール
 ######################################################################
-
 # 索引用中間ファイル作成コマンド
 MENDEXCMD = $(MENDEX) $(MENDEXFLAG) $(BASE).idx
 
