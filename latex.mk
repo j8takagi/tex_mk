@@ -142,9 +142,9 @@ OTHERFILES = $(sort $(filter-out %.aux $(LATEXINTFILES) $(TEXFILES) $(GRAPHICFIL
 
 # \bibliography命令で読み込まれる文献データベースファイルをTeXファイルから検索する
 # 取得は、1回のmake実行につき1回だけ行われる
-BIBDB = $(BIBDBre)
+BIBFILES = $(BIBFILESre)
 
-BIBDBre = $(eval BIBDB := \
+BIBFILESre = $(eval BIBFILES := \
   $(addsuffix .bib,$(basename \
     $(call latexsrccmd_bracearg,$(BASE).tex $(TEXFILES),bibliography) \
   )))
