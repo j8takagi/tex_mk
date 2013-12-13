@@ -5,8 +5,7 @@ SED := sed
 
 .PHONY: all clean distclean
 
-all:
-	$(MAKE) -s $(TEXTARGETS) && exit 1 || exit 0
+all: error_no_end_seq.pdf
 
 include latex.mk
 

@@ -1,8 +1,5 @@
 TEXTARGETS := simple.pdf
 
-CMP := cmp -s
-SED := sed
-
 .PHONY: all clean distclean
 
 all: $(TEXTARGETS)

@@ -1,5 +1,7 @@
 TEXTARGETS := crossref.pdf
 
+.PHONY: all clean distclean
+
 all: $(TEXTARGETS)
 
 include latex.mk
