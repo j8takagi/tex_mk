@@ -84,7 +84,7 @@ INPUTFILESre = $(eval INPUTFILES := \
 
 # .flsファイルから、OUTPUTファイルを取得。ただし、$TEXMFROOTのファイルを除く
 # 取得は、1回のmake実行につき1回だけ行われる
-OUTPUTFILES =  $(OUTFILESre)
+OUTPUTFILES = $(OUTFILESre)
 
 OUTFILESre = $(eval OUTPUTFILES := \
   $(sort $(filter-out $(BASE).aux $(BASE).dvi $(BASE).log, \
@@ -208,10 +208,12 @@ endef
 # すべての依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
-	@$(ECHO) ' $(TEXFILESFLS) $(TEXFILES) $(LATEXSRCCMD) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBFILES)' >/dev/null
 	@$(ECHO) 'Makefiles variable'
-	@$(foreach f,TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES,$(ECHO) '  $f=$($f)'; )
-    # .dファイルの依存関係を出力
+    # 遅延展開される変数の展開。実際の表示はしない
+	@$(foreach f, INPUTFILES OUTPUTFILES TEXFILES GRAPHICFILES BIBFILES, $(ECHO) '  $f=$($f)'>/dev/null; )
+    # .dファイルに書き込まれる変数をコマンドラインに表示
+	@$(foreach f, TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES, $(ECHO) '  $f=$($f)'; )
+    # .dファイルの依存関係をターゲットファイルに出力
 	$(DFILEDEP)
     # TeXファイルの依存関係をターゲットファイルに出力
 	$(if $(TEXFILS),$(TEXFILESDEP))
