@@ -9,7 +9,7 @@
 CAT := cat
 CMP := cmp -s
 CP := cp
-ECHO := /bin/echo
+ECHO := echo
 GREP := grep
 MKDIR := mkdir
 SED := sed
@@ -149,78 +149,82 @@ BIBFILESre = $(eval BIBFILES := \
     $(call latexsrccmd_bracearg,$(BASE).tex $(TEXFILES),bibliography) \
   )))
 
-# .dファイルの依存関係
-DFILEDEP = '$(BASE).d: $(strip $(BASE).tex $(BASE).fls $(TEXFILES))'
-
-# TeXファイルの依存関係
-TEXFILESDEP = \
-  '\n' \
-  '\# Files called from \include or \input - .tex\n' \
-  '$(BASE).aux: $(TEXFILES)'
-
-# LaTeX中間ファイルの依存関係
-LATEXINTFILESDEP = \
-  '\n' \
-  '\# LaTeX Intermediate Files\n' \
-  '\#\n' \
-  '\# $$(COMPILE.tex) := $(LATEXCMD)\n' \
-  '\# $$(COMPILES.tex) := $(subst $(EXITWARN),exit 1,$(subst $(EXITNOTFOUND),exit 0,$(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))))\n' \
-  '\#\n' \
-  '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBDB),$(BASE).bbl_prev))\n' \
-  '\t@$$(COMPILE.tex)\n' \
-  '\n' \
-  '$(BASE).dvi:: $(BASE).aux\n' \
-  '\t@$$(COMPILES.tex)'
-
-# 画像ファイルの依存関係
-GRAPHICFILESDEP = \
-  '\n' \
-  '\# Files called from \includegraphics - $(GRAPHICSEXT)\n' \
-  '$(BASE).aux: $(GRAPHICFILES)'
-
-# .xbbファイルの依存関係
-XBBFILESDEP = \
-  '\n' \
-  '\# .xbb files with: $(filter-out .eps,$(GRAPHICSEXT))\n' \
-  '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))'
-
-# 文献リスト作成用ファイルの依存関係
-BIBDBDEP = \
-  '\n' \
-  '\# Bibliography files: .aux, BIBDB -> .bbl -> .div\n' \
-  '$(BASE).bbl: $(BIBDB) $(BASE).tex'
-
-# そのほかのファイル（TeXシステム以外のクラス・スタイルファイルなど）の依存関係
-OTHERFILESDEP = \
-  '\n' \
-  '\# Other files\n' \
-  '$(BASE).aux: $(OTHERFILES)'
-
-# putsdep: 依存関係を出力する
-# 用例: $(call putsdep,text)
-define putsdep
-  $(ECHO) -e $1 | $(SED) -e 's/^ \{1,\}//'
+# .dファイルの依存関係を.dファイルへ出力する
+define DFILEDEP
+  @$(ECHO) $(BASE).d: $(strip $(BASE).tex $(BASE).fls $(TEXFILES))>$(BASE).d
 endef
 
-# 依存関係を.dファイルに書き出す
+# TeXファイルの依存関係を.dファイルへ出力する
+
+define TEXFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# Files called from \include or \input - .tex' >>$(BASE).d
+  @$(ECHO) '$(BASE).aux: $(TEXFILES)' >>$(BASE).d
+endef
+
+# LaTeX中間ファイルの依存関係を.dファイルへ出力する
+define LATEXINTFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# LaTeX Intermediate Files' >>$(BASE).d
+  @$(ECHO) '#' >>$(BASE).d
+  @$(ECHO) '# $$(COMPILE.tex) := $(LATEXCMD)' >>$(BASE).d
+  @$(ECHO) '# $$(COMPILES.tex) := $(subst $(EXITWARN),exit 1,$(subst $(EXITNOTFOUND),exit 0,$(subst $(COMPILE.tex),$(LATEXCMD),$(COMPILES.tex))))' >>$(BASE).d
+  @$(ECHO) '#' >>$(BASE).d
+  @$(ECHO) '$(BASE).dvi:: $(sort $(LATEXINTFILES_PREV) $(if $(BIBFILES),$(BASE).bbl_prev))' >>$(BASE).d
+  @$(ECHO) '\t@$$(COMPILE.tex)' >>$(BASE).d
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '$(BASE).dvi:: $(BASE).aux' >>$(BASE).d
+  @$(ECHO) '\t@$$(COMPILES.tex)' >>$(BASE).d
+endef
+
+# 画像ファイルの依存関係を.dファイルへ出力する
+define GRAPHICFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# Files called from \includegraphics - $(GRAPHICSEXT)' >>$(BASE).d
+  @$(ECHO) '$(BASE).aux: $(GRAPHICFILES)' >>$(BASE).d
+endef
+
+# .xbbファイルの依存関係を.dファイルへ出力する
+define XBBFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# .xbb files with: $(filter-out .eps,$(GRAPHICSEXT))' >>$(BASE).d
+  @$(ECHO) '$(BASE).aux: $(addsuffix .xbb,$(basename $(filter-out %.eps,$(GRAPHICFILES))))' >>$(BASE).d
+endef
+
+# 文献リスト作成用ファイルの依存関係を.dファイルへ出力する
+define BIBFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# Bibliography files: .aux, .bib -> .bbl -> .div' >>$(BASE).d
+  @$(ECHO) '$(BASE).bbl: $(BIBFILES) $(BASE).tex' >>$(BASE).d
+endef
+
+# そのほかのファイル（TeXシステム以外のクラス・スタイルファイルなど）の依存関係を.dファイルへ出力する
+define OTHERFILESDEP
+  @$(ECHO) >>$(BASE).d
+  @$(ECHO) '# Other files' >>$(BASE).d
+  @$(ECHO) '$(BASE).aux: $(OTHERFILES)' >>$(BASE).d
+endef
+
+# すべての依存関係を.dファイルに書き出す
 %.d: %.fls
     # Makefile変数の展開
-	@$(ECHO) ' $(TEXFILESFLS) $(TEXFILES) $(LATEXSRCCMD) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBDB)' >/dev/null
-	@$(ECHO) -e 'Makefiles variable\n  TEXFILES=$(TEXFILES)\n  LATEXINTFILES=$(LATEXINTFILES)\n  GRAPHICFILES=$(GRAPHICFILES)\n  BIBDB=$(BIBDB)'
+	@$(ECHO) ' $(TEXFILESFLS) $(TEXFILES) $(LATEXSRCCMD) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBFILES)' >/dev/null
+	@$(ECHO) 'Makefiles variable'
+	@$(foreach f,TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES,$(ECHO) '  $f=$($f)'; )
     # .dファイルの依存関係を出力
-	@$(call putsdep,$(DFILEDEP)) >$@
+	$(DFILEDEP)
     # TeXファイルの依存関係を出力
-	$(if $(TEXFILES),@$(call putsdep,$(TEXFILESDEP)) >>$@)
+	$(if $(TEXFILS),$(TEXFILESDEP))
     # 中間ファイルの依存関係を出力
-	$(if $(strip $(LATEXINTFILES) $(BIBDB)), @$(call putsdep,$(LATEXINTFILESDEP)) >>$@)
+	$(if $(strip $(LATEXINTFILES) $(BIBFILES)),$(LATEXINTFILESDEP))
     # 画像ファイルの依存関係を出力
-	$(if $(GRAPHICFILES),@$(call putsdep,$(GRAPHICFILESDEP)) >>$@)
+	$(if $(GRAPHICFILES),$(GRAPHICFILESDEP))
     # バウンディング情報ファイルの依存関係を出力
-	$(if $(filter-out %.eps,$(GRAPHICFILES)),@$(call putsdep,$(XBBFILESDEP)) >>$@)
+	$(if $(filter-out %.eps,$(GRAPHICFILES)),$(XBBFILESDEP))
     # 文献リストファイルの依存関係を出力
-	$(if $(BIBDB),@$(call putsdep,$(BIBDBDEP)) >>$@)
+	$(if $(BIBFILES),$(BIBFILESDEP))
     # そのほかのファイルの依存関係を出力
-	$(if $(OTHERFILES),@$(call putsdep,$(OTHERFILESDEP)) >>$@)
+	$(if $(OTHERFILES),$(OTHERFILESDEP))
 	@$(ECHO) '$@ is generated by scanning $(strip $(BASE).tex $(TEXFILES)) and $(BASE).fls.'
 
 # 変数TEXTARGETSで指定されたターゲットファイルに対応する
