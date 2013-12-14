@@ -17,4 +17,4 @@ crossref.tex:46: LaTeX Warning: Reference `noexist' on page 1 undefined on input
 
 LaTeX Warning: There were undefined references.
 
-make: *** [crossref.dvi] Error 1
+make: *** Error 1
