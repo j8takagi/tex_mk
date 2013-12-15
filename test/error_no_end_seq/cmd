@@ -1,1 +1,1 @@
-cd ../../sample/error_no_end_seq && make -s distclean && make -s all 2>&1 | sed -e 's/^make\[[0-9]*\]:.*/make: *** Error 1/'
+cd ../../sample/error_no_end_seq && make -s distclean && make -s all 2>&1 | sed -e '/^make\[[0-9]*\]:/d'
