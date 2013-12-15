@@ -65,7 +65,7 @@ endef
 # テストのログファイルをグループログファイルに出力。引数は、テスト、グループログファイル
 # 用例: $(call group_log_each,file_test_log,file_group_log)
 define group_log_each
-    $(if $(filter 1,$(verbose)),$(ECHO) -n '.')
+    $(if $(filter 1,$(verbose)),$(PRINTF) '.')
     $(ECHO) $(dir $1) >>$2;
     if test -s $1; then $(CAT) $1 >>$2; else $(ECHO) $(dir $1)": no log" >>$2; fi
     $(ECHO) >>$2;

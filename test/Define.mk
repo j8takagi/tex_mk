@@ -33,6 +33,7 @@ LINECOUNT := wc -l
 LN := ln -s
 MKDIR := mkdir -p
 MV := mv
+PRINTF := /usr/bin/printf
 SED := sed
 TIME := time
 TR := tr
