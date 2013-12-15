@@ -11,4 +11,3 @@ platex -interaction=batchmode error_no_end_seq.tex
                         
 *** (job aborted, no legal \end found)
 
-make: *** Error 1
