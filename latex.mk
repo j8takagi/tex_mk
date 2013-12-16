@@ -14,6 +14,7 @@ GREP := grep
 MKDIR := mkdir
 SED := sed
 SEQ := seq
+TEST := test
 
 # LaTeXコマンド
 LATEX := platex
@@ -259,7 +260,7 @@ WARN_UNDEFREF := There were undefined references.
 LIM := 3
 LIMMSG := $(LATEX) is run $(LIM) times, but there are still undefined references.
 
-EXITNOTFOUND = if test $$? -eq 1; then exit 0; else exit $$?; fi
+EXITNOTFOUND = if $(TEST) $$? -eq 1; then exit 0; else exit $$?; fi
 
 EXITWARN = \
   $(ECHO) "$(LIMMSG)" >&2; \
@@ -269,7 +270,7 @@ EXITWARN = \
 
 COMPILES.tex = \
   for i in `$(SEQ) 0 $(LIM)`; do \
-    if test $$i -lt $(LIM); then \
+    if $(TEST) $$i -lt $(LIM); then \
       $(GREP) -F "$(WARN_UNDEFREF)" $(BASE).log || $(EXITNOTFOUND) && $(COMPILE.tex); \
     else \
       $(EXITWARN); \
@@ -311,12 +312,12 @@ FLSDIR := .fls.temp
 FLSCMD = $(LATEX) -interaction=nonstopmode -recorder -output-directory=$(FLSDIR) $(BASE).tex
 
 GENERETE.fls = \
-  if test ! -e $(FLSDIR); then \
+  if $(TEST) ! -e $(FLSDIR); then \
     $(MKDIR) $(FLSDIR); \
   fi; \
   $(FLSCMD) 1>/dev/null 2>&1; \
   $(SED) -e 's|$(FLSDIR)/||g' $(FLSDIR)/$(BASE).fls >$(BASE).fls; \
-  if test -e $(BASE).fls; then \
+  if $(TEST) -e $(BASE).fls; then \
     $(ECHO) '$(BASE).fls is generated.'; \
     $(RM) -r $(FLSDIR); \
   else \
