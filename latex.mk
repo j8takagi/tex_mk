@@ -103,9 +103,9 @@ TEXFILESFLS = $(filter %.tex,$(INPUTFILES))
 # 用例: $(call latexsrccmd_bracearg,files,cmds)
 define latexsrccmd_bracearg
   $(shell \
-    $(SED) -e '/^\s*%/d' -e 's/\([^\]\)\s*%.*/\1/g' $(wildcard $1) | \
-      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d' -e 's/\\verb|[^|]*|//g' | \
-      $(SED) -e 's/}/}%/g' | $(SED) -e 'y/}%/}\n/' | \
+    $(SED) -e '/^\s*%/d; s/\([^\]\)\s*%.*/\1/g' $(wildcard $1) | \
+      $(SED) -e '/\\begin{verbatim}/,/\\end{verbatim}/d; s/\\verb|[^|]*|//g' | \
+      $(SED) -e 's/}/}%/g; y/}%/}\n/' | \
       $(SED) -n $(foreach c,$2,-e 's/.*\\$c\(\[[^]]*\]\)\{0,1\}{\([^}]*\)}$$/\2/p' ) | \
       $(SED) -e 'y/,/ /'
   )
