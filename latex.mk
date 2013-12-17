@@ -5,7 +5,22 @@
 ######################################################################
 # 使用するシェルコマンドの定義
 ######################################################################
-# シェルコマンド
+# LaTeX commands
+LATEX := platex
+DVIPDFMX := dvipdfmx
+EXTRACTBB := extractbb
+BIBTEX := pbibtex
+MENDEX := mendex
+KPSEWHICH := kpsewhich
+
+# LaTeX commands option flag
+LATEXFLAG ?=
+DVIPDFMXFLAG ?=
+EXTRACTBBFLAGS ?=
+BIBTEXFLAG ?=
+MENDEXFLAG ?=
+
+# General command line tools
 CAT := cat
 CMP := cmp -s
 CP := cp
@@ -15,21 +30,6 @@ MKDIR := mkdir
 SED := sed
 SEQ := seq
 TEST := test
-
-# LaTeXコマンド
-LATEX := platex
-DVIPDFMX := dvipdfmx
-EXTRACTBB := extractbb
-BIBTEX := pbibtex
-MENDEX := mendex
-KPSEWHICH := kpsewhich
-
-# LaTeXオプション
-LATEXFLAG ?=
-DVIPDFMXFLAG ?=
-EXTRACTBBFLAGS ?=
-BIBTEXFLAG ?=
-MENDEXFLAG ?=
 
 # シェルコマンドをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
 # 例: DEBUGSH=1 make
