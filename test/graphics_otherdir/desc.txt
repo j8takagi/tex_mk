@@ -1,0 +1,1 @@
+../../sample/graphics_otherdir/desc.txt
