@@ -210,10 +210,10 @@ endef
 %.d: %.fls
     # Makefile変数の展開
     # 遅延展開される変数の展開。実際の表示はしない
-	@$(foreach f, INPUTFILES OUTPUTFILES TEXFILES GRAPHICFILES BIBFILES, $(ECHO) '  $f=$($f)'>/dev/null; )
+	@$(foreach f, INPUTFILES OUTPUTFILES TEXFILES GRAPHICFILES BIBFILES, $(ECHO) '$f=$($f)'>/dev/null; )
     # .dファイルに書き込まれる変数をコマンドラインに表示
 	@$(if $(strip $(TEXFILES) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBFILES)), \
-      $(ECHO) 'Makefiles variable'; \
+      $(ECHO) 'Makefile variables'; \
       $(foreach f, TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES, $(if $($f),$(ECHO) '  $f=$($f)'; )) \
     )
     # .dファイルを作成し、.dファイル自身の依存関係をターゲットファイルへ出力
