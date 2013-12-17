@@ -209,11 +209,13 @@ endef
 # .dファイルを作成するパターンルール
 %.d: %.fls
     # Makefile変数の展開
-	@$(ECHO) 'Makefiles variable'
     # 遅延展開される変数の展開。実際の表示はしない
 	@$(foreach f, INPUTFILES OUTPUTFILES TEXFILES GRAPHICFILES BIBFILES, $(ECHO) '  $f=$($f)'>/dev/null; )
     # .dファイルに書き込まれる変数をコマンドラインに表示
-	@$(foreach f, TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES, $(ECHO) '  $f=$($f)'; )
+	@$(if $(strip $(TEXFILES) $(LATEXINTFILES) $(GRAPHICFILES) $(BIBFILES)), \
+      $(ECHO) 'Makefiles variable'; \
+      $(foreach f, TEXFILES LATEXINTFILES GRAPHICFILES BIBFILES, $(if $($f),$(ECHO) '  $f=$($f)'; )) \
+    )
     # .dファイルを作成し、.dファイル自身の依存関係をターゲットファイルへ出力
 	@$(CREATE_DFILE)
     # TeXファイルがある場合、依存関係をターゲットファイルへ出力
