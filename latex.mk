@@ -19,6 +19,7 @@ DVIPDFMXFLAG ?=
 EXTRACTBBFLAGS ?=
 BIBTEXFLAG ?=
 MENDEXFLAG ?=
+LATEXFLAG := -synctex=1
 
 # General command line tools
 CAT := cat
@@ -454,4 +455,5 @@ tex-distclean: tex-clean tex-xbb-clean
 ifneq (,$(filter %.dvi,$(TEXTARGETS)))
 	$(RM) *.dvi
 endif
+	$(RM) *.synctex.gz
 	$(RM) $(TEXTARGETS)
