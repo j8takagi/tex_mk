@@ -1,6 +1,7 @@
-TEXMAINFILES := *.tex
+TEXMAIN := *
+TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAIN).tex))
 
-TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAINFILES)))
+.PHONY: all clean distclean
 
 all: $(TEXTARGETS)
 

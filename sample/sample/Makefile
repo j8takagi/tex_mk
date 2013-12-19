@@ -1,6 +1,5 @@
-TEXMAINFILES := *.tex
-
-TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAINFILES)))
+TEXMAIN := *
+TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAIN).tex))
 
 all: $(TEXTARGETS)
 
