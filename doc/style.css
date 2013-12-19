@@ -1,0 +1,139 @@
+body {
+    margin-left: 6em;
+    margin-right: 12em;
+    color: black;
+    background-color: #EEE;
+}
+
+h1, h2 {
+    margin-left: -2em;
+}
+
+.node{
+    margin-left: -3em;
+    color: inherit;
+    background-color: #DDF;
+}
+
+.menu, .node {
+    color: inherit;
+    background-color: #DDF;
+}
+
+table.menu, table.menu th, table.menu td {
+    border-style: none;
+}
+
+h2 {
+    padding: 0.25em;
+    color: white;
+    background-color: navy;
+}
+
+.contents {
+    background-color: #DDF;
+    border: 4px double #000;
+}
+
+.contents h2 {
+    margin-left: 0;
+    color: black;
+    background-color: #DDF;
+}
+
+.shortcontents {
+    background-color: #DDF;
+    border: 4px double #000;
+ }
+
+.shortcontents h2{
+    display: none;
+}
+
+h1.node-heading {
+    display: none;
+}
+
+h2.shortcontents-heading{
+    display: none;
+}
+
+.shortcontents a {
+   margin-right: 1em;
+}
+
+h3, h4, h5 {
+    color: navy;
+    margin-left: -1em;
+}
+
+h5 {
+    font-size: 100%;
+}
+
+p {
+    line-height: 1.25em;
+    margin-top: 0;
+    margin-bottom: 0.5em;
+}
+
+a:hover {
+    color: red;
+    text-decoration: underline;
+}
+
+pre.example, pre.verbatim {
+    padding: 0.5em 1em 0.5em 1em;
+    font-size: 90%;
+}
+
+pre.example, pre.verbatim {
+    border: 1px solid navy;
+}
+
+a {
+    text-decoration: none;
+}
+
+blockquote {
+    line-height: 1.25em;
+    border: 1px solid #00F;
+}
+
+kbd, code, .file, var {
+    font-style: normal;
+    font-family: monospace;
+    font-size: 90%;
+    margin-left:0.5em;
+    margin-right: 0.5em;
+}
+
+table, th, td {
+    border: 1px solid #CCC;
+    border-collapse: collapse; /* 枠線の表示方法 */
+}
+
+table.cartouche, table.cartouche th, table.cartouche td  {
+    border: none;
+}
+
+pre.example .command, pre.example .option, pre.example kbd {
+    font-weight: bold;
+    font-family: monospace;
+    font-style: normal;
+    margin-left:0;
+    margin-right: 0;
+}
+
+pre.example strong {
+    font: inherit;
+    border: 2px solid green;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dfn {
+    font-style: normal;
+}
