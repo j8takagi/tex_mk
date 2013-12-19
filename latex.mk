@@ -2,8 +2,26 @@
 # Copyright 2013, j8takagi.
 # latex.mk is licensed under the MIT license.
 
+# TEXTARGETS変数が設定されていない場合は、エラー終了
+ifndef TEXTARGETS
+  $(error "TEXTARGETS is not set.")
+else
+  $(foreach \
+    f, $(TEXTARGETS), \
+    $(if $(wildcard $(basename $f).tex),,$(error "$(basename $f).tex needed by $f is not exist.")) \
+  )
+endif
+
+# DEBUGSH変数が設定されている場合は、デバッグ用にシェルコマンドの詳細が表示される
+# 例: DEBUGSH=1 make
+ifdef DEBUGSH
+  SHELL := /bin/sh -x
+endif
+
+.PHONY: tex-warn tex-xbb tex-clean tex-xbb-clean tex-distclean
+
 ######################################################################
-# 使用するシェルコマンドの定義
+# シェルコマンドの定義
 ######################################################################
 # LaTeX commands
 LATEX := platex
@@ -13,15 +31,14 @@ BIBTEX := pbibtex
 MENDEX := mendex
 KPSEWHICH := kpsewhich
 
-# LaTeX commands option flag
-LATEXFLAG ?=
-DVIPDFMXFLAG ?=
-EXTRACTBBFLAGS ?=
-BIBTEXFLAG ?=
-MENDEXFLAG ?=
+# LaTeX command option flags
 LATEXFLAG := -synctex=1
+DVIPDFMXFLAG :=
+EXTRACTBBFLAGS :=
+BIBTEXFLAG :=
+MENDEXFLAG :=
 
-# General command line tools
+# General commands
 CAT := cat
 CMP := cmp -s
 CP := cp
@@ -31,12 +48,6 @@ MKDIR := mkdir
 SED := sed
 SEQ := seq
 TEST := test
-
-# シェルコマンドをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
-# 例: DEBUGSH=1 make
-ifdef DEBUGSH
-  SHELL := /bin/sh -x
-endif
 
 ######################################################################
 # 拡張子
@@ -432,7 +443,7 @@ COMPILE.bib = $(ECHO) $(BIBTEXCMD); $(BIBTEXCMD) >/dev/null 2>&1 || ($(CAT) $(BA
 ######################################################################
 # 警告
 tex-warn:
-	@($(ECHO) "check current directory, or set TEXTARGET in Makefile." >&2)
+	@$(ECHO) "Check current directory, or target of Makefile." >&2; exit 2
 
 # すべての画像ファイルに対してextractbbを実行
 tex-xbb:
