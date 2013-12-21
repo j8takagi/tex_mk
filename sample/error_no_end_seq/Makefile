@@ -7,7 +7,7 @@ SED := sed
 
 all: error_no_end_seq.pdf
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

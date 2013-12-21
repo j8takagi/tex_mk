@@ -4,7 +4,7 @@ TEXTARGETS := graphics.pdf
 
 all: graphics.pdf
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

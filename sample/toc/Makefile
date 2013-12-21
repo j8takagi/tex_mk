@@ -45,7 +45,7 @@ toc.tex.6th.patch: rebase
 rebase:
 	$(CMP) toc.tex.5th toc.tex || $(CP) toc.tex.5th toc.tex
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

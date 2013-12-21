@@ -5,7 +5,7 @@ TEXTARGETS := $(addsuffix .pdf,$(TEXMAIN))
 
 all: $(TEXTARGETS)
 
-include latex.mk
+include tex.mk
 include eukleides.mk
 
 clean: tex-clean eukleides-clean

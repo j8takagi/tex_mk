@@ -4,9 +4,9 @@ all: $(TEXTARGETS)
 
 include R.mk
 
-include latex.mk
+include tex.mk
 
-LATEX := uplatex
+TEX := uplatex
 
 clean: tex-clean R-clean
 

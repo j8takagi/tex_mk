@@ -25,7 +25,7 @@ bibtex_2.pdf: update
 	@$(MAKE) -s bibtex.pdf
 	@$(CP) -v bibtex.pdf $@
 
-include latex.mk
+include tex.mk
 
 update: body-update bib-update
 

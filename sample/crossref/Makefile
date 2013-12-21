@@ -2,7 +2,7 @@ TEXTARGETS := crossref.pdf
 
 all: $(TEXTARGETS)
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

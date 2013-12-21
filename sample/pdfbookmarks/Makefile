@@ -33,7 +33,7 @@ pdfbookmarks.tex.6th.patch:
 rebase:
 	$(CMP) pdfbookmarks.tex.5th pdfbookmarks.tex || $(CP) pdfbookmarks.tex.5th pdfbookmarks.tex
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

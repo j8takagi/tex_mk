@@ -29,7 +29,7 @@ rebase:
 update:
 	@$(CONVERT) Panthera_tigris_tigris.jpg tiger.eps
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

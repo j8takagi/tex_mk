@@ -4,7 +4,7 @@ TEXTARGETS := error_no_graphic_file.pdf
 
 all: $(TEXTARGETS)
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean
 

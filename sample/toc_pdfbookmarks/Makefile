@@ -45,7 +45,7 @@ toc_pdfbookmarks.tex.6th.patch: rebase
 rebase:
 	$(CMP) toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex || $(CP) toc_pdfbookmarks.tex.5th toc_pdfbookmarks.tex
 
-include latex.mk
+include tex.mk
 
 clean: rebase tex-clean
 

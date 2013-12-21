@@ -28,7 +28,7 @@ update:
 rebase:
 	$(CMP) simple.tex.base simple.tex || $(CP) simple.tex.base simple.tex
 
-include latex.mk
+include tex.mk
 
 clean: rebase tex-clean
 	$(RM) *.bak

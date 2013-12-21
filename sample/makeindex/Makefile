@@ -38,7 +38,7 @@ index-update:
 rebase:
 	$(CMP) makeindex.tex.base makeindex.tex || $(CP) makeindex.tex.base makeindex.tex
 
-include latex.mk
+include tex.mk
 
 clean: tex-clean rebase
 	$(RM) *.bak
