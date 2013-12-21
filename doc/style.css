@@ -137,3 +137,7 @@ dt {
 dfn {
     font-style: normal;
 }
+
+.header, .menu {
+    display: none;
+}

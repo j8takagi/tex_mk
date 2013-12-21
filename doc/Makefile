@@ -1,16 +1,22 @@
 # HTMLファイルで使うCSSファイルを指定
 CSS := style.css
 
+# General commands
+SED := sed
+
 .PHONY: all clean distclean
 
-.SECONDERY: latex_mk.tex
+TEXITARGETS := tex_mk.html tex_mk.pdf
 
-all: latex_mk.html latex_mk.pdf
+all: $(TEXITARGETS)
 
 include texinfo.mk
 
-latex_mk.html latex_mk_html: $(CSS)
+commands.texi: ../tex.mk
+	$(SED) -n -e '/^# TeX commands/,/^$$/p' $< | sed -e '/^#/d' -e '/^$$/d' >$@
 
-clean: texinfo-clean
+tex_mk.html tex_mk_html: $(CSS)
 
-distclean: texinfo-distclean
+clean: texi-clean
+
+distclean: texi-distclean
