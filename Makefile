@@ -12,6 +12,8 @@ check:
 clean:
 	$(MAKE) -sC test clean
 	$(MAKE) -sC sample clean
+	$(MAKE) -sC doc clean
 
 distclean: clean
 	$(MAKE) -sC sample distclean
+	$(MAKE) -sC doc distclean
