@@ -1,22 +1,22 @@
-.PHONY: R-clean R-distclean
-
 CAT := cat
-ECHO := /bin/echo
-EPSTOPDF := epstopdf
-R := R
+ECHO := echo
 SED := sed
 
+R := R
+
 RFLAG = --slave --vanilla
+
+GRAPHICEXT := .pdf .png .jpeg .jpg .svg .eps .tex
+
+.PHONY: R-clean R-distclean
+
+.SECONDARY: $(foreach e,$(GRAPHICEXT),$(basename $(wildcard *.R))$e.R)
 
 # read.table文で読み込まれるファイル
 tablefiles = $(strip $(shell $(SED) -n -e 's/.*read\.table."\(.*\)".*;/\1/gp' $<))
 
 # source文で読み込まれるファイル
 sourcefiles = $(strip $(shell $(SED) -n -e 's/.*source."\(.*\)".*;/\1/gp' $<))
-
-# used by R postscript device.
-# For details, type '?postscriptFonts' in R.
-psfamily ?= Japan1
 
 # 依存関係を自動生成し、dファイルに格納
 %.d: %.R
@@ -41,19 +41,18 @@ ifeq (,$(filter %clean %d,$(MAKECMDGOALS)))
   -include $(addsuffix .d,$(basename $(RTARGETS)))
 endif
 
+# used by R postscript/PDF device.
+# For details, type '?postscriptFonts' or '?postscriptFonts' in R.
+psfamily := Japan1
+pdffamily := Japan1
+
 %.eps.R: %.R
 	@$(ECHO) 'postscript(file="$(subst .R,.eps,$<)",family="$(psfamily)", onefile=F, horizontal=F)' >$@
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
 
-%.eps: %.eps.R
-	$(R) $(RFLAG) <$<
-
-# %.pdf: %.eps
-# 	$(EPSTOPDF) $<
-
 %.pdf.R: %.R
-	@$(ECHO) 'pdf("$(subst .R,.pdf,$<)", family="Japan1")' >$@
+	@$(ECHO) 'pdf("$(subst .R,.pdf,$<)", family="$(pdffamily)")' >$@
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
 
@@ -67,18 +66,22 @@ endif
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
 
-# install.packages("RSvgDevice")
+# required: install.packages("RSvgDevice")
 %.svg.R: %.R
 	@$(ECHO) 'library("RSvgDevice")' >$@
 	@$(ECHO) 'devSVG("$(subst .R,.svg,$<)")' >>$@
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
 
-%.tikz.R: %.R
+# reqiured: install.packages("tikzDevice", repos="http://R-Forge.R-project.org", type="source")
+%.tex.R: %.R
 	@$(ECHO) 'library("tikzDevice")' >$@
 	@$(ECHO) 'tikz("$(subst .R,.tex,$<)")' >>$@
 	@$(CAT) $< >>$@
 	@$(ECHO) 'invisible(dev.off())' >>$@
+
+%.eps: %.eps.R
+	$(R) $(RFLAG) <$<
 
 %.pdf: %.pdf.R
 	$(R) $(RFLAG) <$<
@@ -92,11 +95,11 @@ endif
 %.svg: %.svg.R
 	$(R) $(RFLAG) <$<
 
-%.tex: %.tikz.R
-	$(R) $(RFLAG) <$< 2>$(subst .R,.log,$<)
+%.tex: %.tex.R
+	$(R) $(RFLAG) <$<
 
 R-clean:
-	$(RM) *.pdf.R *.png.R *.jpeg.R *.svg.R *.eps.R *.tikz.R *.d
+	$(RM) $(foreach e,$(GRAPHICEXT),*$e.R)
 
 R-distclean: R-clean
-	$(RM) $(subst .R,.pdf,$(wildcard *.R)) $(subst .R,.png,$(wildcard *.R))  $(subst .R,.jpeg,$(wildcard *.R)) $(subst .R,.svg,$(wildcard *.R)) $(subst .R,.eps,$(wildcard *.R))  $(subst .R,.tex,$(wildcard *.R))
+	$(RM) $(wildcard $(foreach f, $(wildcard *.R), $(addprefix $(basename $f),$(GRAPHICEXT))))
