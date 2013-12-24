@@ -1,13 +1,16 @@
-latex.mk
-LaTeX処理（コンパイル）を行う
+= tex.mk =
+tex.mkは、 TeXおよびLaTeXでのドキュメント作成時に必要な、
+.texファイルからPDFなどを生成する作業を自動化するためのツールです。
+tex.mkは、GNU Make スクリプトとして実装されています。
+
+詳細はマニュアル（tex_mk.html）を参照してください。
 
 == 使い方 ==
-1. texソースファイルと同じディレクトリーに本ファイル（latex.mk）をコピーする
+1. texソースファイルと同じディレクトリーにtex.mkをコピーする
 
-2. 「Makefileのサンプル」のような内容で、texソースファイルと同じディレクトリーにMakefileを作成する
+2. 「Makefileサンプル」のような内容で、texソースファイルと同じディレクトリーにMakefileを作成する
 
 3. texソースファイルと同じディレクトリーで、make コマンドを実行する
-
 
 === Makefileのサンプル ===
 TEXTARGETS := report.tex
@@ -19,3 +22,7 @@ include latex.mk
 clean: tex-clean
 
 distclean: tex-distclean
+
+=== ライセンス ===
+Copyright 2013, j8takagi.
+tex.mk is licensed under the MIT license.
