@@ -1,1 +1,1 @@
-cd ../../sample/error_undef_ctl_seq && make -s distclean && make -s all 2>&1 | sed -e '/^make\[[0-9]*\]:/d'
+cd ../../sample/error_undef_ctl_seq && make -s distclean && make -s all 2>&1 | sed -e '/^make\[[0-9]*\]:/d' -e '/^tex.mk:[0-9]*:/d'
