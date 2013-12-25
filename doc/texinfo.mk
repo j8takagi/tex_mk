@@ -71,15 +71,25 @@ TEXIOUTEXT := .info .dvi .html _html .txt .xml
 ######################################################################
 CONDITIONAL := docbook html info plaintext tex xml
 
+getincludefiles = \
+  $(SED) -e "s/@c .*$$//" -e "s/@comment .*$$//" $< | \
+    $(SED) -e "s/@verb{\[^}\]*}//g" | \
+    $(SED) -e "/^@verbatim /,/^@end verbatim$$/d" | \
+    $(SED) -n -e "s/^@include \(.*\)$$/\1/p"
+
+incadd = `if test -e $${incadd}; then sed -n -e 's/^\([a-z]*\.txt\)/\1/p' $${incadd}; fi`
+
+# 引数rootfileで指定した.texiファイルから@includeで指定されたファイルを再帰的に取得する
+# 用例: $(call incfiles,rootfile)
+define incfiles
+incadd="$1"; while test -n "$${incadd}"; do incfiles="$${incfiles} $${incadd}"; incadd="$(incadd)"; done; echo $${incfiles}
+endef
+
 INCLUDEFILES = $(INCLUDEFILESre)
 
 INCLUDEFILESre = $(eval INCLUDEFILES := \
-  $(sort $(shell \
-    $(SED) -e "s/@c .*$$//" -e "s/@comment .*$$//" $< | \
-      $(SED) -e "s/@verb{\[^}\]*}//g" | \
-      $(SED) -e "/^@verbatim /,/^@end verbatim$$/d" | \
-      $(SED) -n -e "s/^@include \(.*\)$$/\1/p" \
-  )))
+    $(call $incfiles,$<) \
+  )
 
 INCLUDEVERBATIMFILES = $(INCLUDEVERBATIMFILESre)
 
@@ -92,7 +102,7 @@ INCLUDEVERBATIMFILESre = $(eval INCLUDEVERBATIMFILES := \
   )))
 
 # .texiファイルから@imageで指定された画像を取得する
-# ただし、出力先別の条件文で指定された部分のものは除く
+# ただし、引数outputで指定された出力先が条件文で除外している部分は除く
 # 用例: $(call images,output)
 define images
 $(sort $(shell \
@@ -261,4 +271,4 @@ texi-clean: texi-texint-clean
 	$(RM) *.d
 
 texi-distclean: texi-clean
-	$(RM) -r $(foreach f,$(sort $(basename $(TEXITARGETS))),$(wildcard $(addprefix $f,$(TEXIOUTEXT) .pdf)))
+	$(RM) -r $(wildcard $(foreach f,$(sort $(basename $(TEXITARGETS))),$(addprefix $f,$(TEXIOUTEXT) .pdf)))
