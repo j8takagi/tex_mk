@@ -3,7 +3,7 @@
 ECHO := echo
 
 all:
-	@$(ECHO) "Usage: make check; make clean; make distclean" >&2
+	@$(ECHO) "Usage -- make check; make clean; make distclean" >&2
 
 
 check:
