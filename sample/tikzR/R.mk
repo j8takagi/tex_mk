@@ -81,22 +81,22 @@ pdffamily := Japan1
 	@$(ECHO) 'invisible(dev.off())' >>$@
 
 %.eps: %.eps.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 %.pdf: %.pdf.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 %.png: %.png.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 %.jpeg: %.jpeg.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 %.svg: %.svg.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 %.tex: %.tex.R
-	$(R) $(RFLAG) <$<
+	$(R) $(RFLAG) <$< >$(subst .R,.log,$<) 2>&1
 
 R-clean:
 	$(RM) $(foreach e,$(GRAPHICEXT),*$e.R)
