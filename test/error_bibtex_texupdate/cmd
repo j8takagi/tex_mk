@@ -2,4 +2,4 @@ cd ../../sample/bibtex
 make -s distclean >/dev/null
 make -s all
 make -s tex-update
-make -s all 2>&1 | sed -e '/^make/d'
+make -s all 2>&1 | sed -e '/^make/d' -e '$d'

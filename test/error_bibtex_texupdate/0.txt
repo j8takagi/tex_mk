@@ -30,4 +30,3 @@ bibtex.tex:7: LaTeX Warning: Citation `okumura:bibunsho6' on page 1 undefined on
 
 LaTeX Warning: There were undefined references.
 
-bibtex.d:12: recipe for target 'bibtex.dvi' failed
