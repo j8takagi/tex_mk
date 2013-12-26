@@ -1,1 +1,3 @@
-cd ../../sample/error_no_end_seq && make -s distclean && make -s all 2>&1 | sed -e '/^make\[[0-9]*\]:/d' -e '/^tex.mk:[0-9]*:/d'
+cd ../../sample/error_no_end_seq
+make -s distclean
+make -s all 2>&1 | sed -e '/^make/d' -e '/^tex.mk:[0-9]*:/d' -e '/^[^ :]*:[0-9]*: recipe for target .* failed/d'
