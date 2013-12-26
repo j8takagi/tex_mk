@@ -1,0 +1,3 @@
+cd ../../sample/plaintex
+make -s distclean >/dev/null
+make -s all

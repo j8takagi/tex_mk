@@ -1,0 +1,1 @@
+plain TeXの動作テスト。TeXブック記載の.texファイル

@@ -75,7 +75,7 @@ endef
 define test_log
     $(call desc_log,$3)
     if test ! -s $2; then RES=Success; else RES=Failure; fi; $(ECHO) "$1: Test $$RES $(DATE)" >>$3
-    $(ECHO) "Details in $(CURDIR)/$(DETAIL_FILE)" >>$3
+    $(ECHO) "$(CURDIR)/$(DETAIL_FILE):1: details" >>$3
 endef
 
 # NODISPが設定されていない時は、ログファイルを表示

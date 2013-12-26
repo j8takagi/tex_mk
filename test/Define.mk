@@ -29,15 +29,18 @@ ECHO := echo
 EXPR := expr
 FIND := find
 GREP := grep
+HEAD := head
 LINECOUNT := wc -l
 LN := ln -s
 MKDIR := mkdir -p
 MV := mv
 PRINTF := /usr/bin/printf
+READ := read
 SED := sed
 TIME := time
 TR := tr
 VALGRIND := valgrind
+
 VALGRINDFLAG :=  -q --leak-check=full --log-file=valgrind.log
 
 ######################################################################

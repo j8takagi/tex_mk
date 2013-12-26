@@ -1,0 +1,3 @@
+cd ../../sample/error_plaintex
+make -s distclean >/dev/null
+make -s all 2>&1 | sed -e '/^make/d' -e '/^tex.mk:[0-9]*:/d' -e '/^[^ :]*:[0-9]*: recipe for target .* failed/d'
