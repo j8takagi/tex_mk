@@ -1,1 +1,0 @@
-cd ../../sample/graphics_otherdir && make -s distclean && make -s all

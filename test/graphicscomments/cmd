@@ -1,0 +1,3 @@
+cd ../../sample/graphicscomments
+make -s distclean
+make -s all

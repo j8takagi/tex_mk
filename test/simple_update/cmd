@@ -1,0 +1,5 @@
+cd ../../sample/simple
+make -s distclean >/dev/null 2>&1
+make -s all
+sed -i.bak -e 's/，/、/g' -e 's/．/。/g' simple.tex && rm simple.tex.bak && echo 'simple.tex is updated.'
+make -s all

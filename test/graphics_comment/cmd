@@ -1,1 +1,0 @@
-cd ../../sample/graphics_comment && make -s distclean && make -s all

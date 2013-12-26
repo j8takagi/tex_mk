@@ -1,0 +1,24 @@
+@book{jtexbook,
+    author    = "Donald E. Knuth",
+    title     = "{\TeX}ブック",
+    publisher = "アスキー",
+    isbn      = "4-7561-0010-4",
+    year      = 1989,
+}
+
+@book{jlatexbook,
+    author    = "Leslie Lamport",
+    title     = "文書処理システム{\LaTeX}",
+    publisher = "アスキー",
+    isbn      = "4-7561-0784-2",
+    year      = 1990,
+}
+
+@book{okumura:bibunsho6,
+    author    = "奥村 晴彦 and 黒木 裕介",
+    yomi      = "Haruhiko Okumura and Yusuke Kuroki",
+    title     = "［改訂第6版］{\LaTeXe}美文書作成入門",
+    publisher = "技術評論社",
+    isbn      = "978-4-7741-6045-0",
+    year      = 2013,
+}

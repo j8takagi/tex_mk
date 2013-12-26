@@ -1,0 +1,5 @@
+cd ../../sample/graphicspdf
+make -s distclean
+make -s all
+make -s pdf-update
+make -s all

@@ -1,1 +1,0 @@
-cd ../../sample/graphics_eps && make -s distclean && make -s all

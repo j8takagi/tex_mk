@@ -5,22 +5,7 @@ SED := sed
 
 .PHONY: all update rebase clean distclean
 
-$(TEXTARGETS):
-
-all:
-	@$(MAKE) -s simple_1.pdf
-	@$(ECHO) '--------------------'
-	@$(MAKE) -s simple_2.pdf
-
-simple_1.pdf: rebase
-	@$(ECHO) '---------- $@: $^ ----------'
-	@$(MAKE) -s simple.pdf
-	@$(CP) -v simple.pdf $@
-
-simple_2.pdf: update
-	@$(ECHO) '---------- $@: $^ ----------'
-	@$(MAKE) -s simple.pdf
-	@$(CP) -v simple.pdf $@
+all: $(TEXTARGETS)
 
 update:
 	$(SED) -i.bak -e 's/，/、/g' -e 's/．/。/g' simple.tex

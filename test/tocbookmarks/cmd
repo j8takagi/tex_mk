@@ -1,0 +1,3 @@
+cd ../../sample/tocbookmarks
+make -s distclean
+make -s all

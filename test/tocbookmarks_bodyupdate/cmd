@@ -1,0 +1,5 @@
+cd ../../sample/tocbookmarks
+make -s distclean
+make -s all
+make -s body-update
+make -s all

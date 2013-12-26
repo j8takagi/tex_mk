@@ -1,1 +1,0 @@
-cd ../../sample/graphics_pdf && make -s distclean && make -s all

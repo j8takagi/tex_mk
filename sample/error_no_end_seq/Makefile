@@ -5,7 +5,7 @@ SED := sed
 
 .PHONY: all clean distclean
 
-all: error_no_end_seq.pdf
+all: $(TEXTARGETS)
 
 include tex.mk
 

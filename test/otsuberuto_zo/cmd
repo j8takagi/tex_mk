@@ -1,1 +1,0 @@
-cd ../../sample/otsuberuto_zo && make -s distclean && make -s all

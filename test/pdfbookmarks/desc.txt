@@ -1,1 +1,0 @@
-../../sample/pdfbookmarks/desc.txt

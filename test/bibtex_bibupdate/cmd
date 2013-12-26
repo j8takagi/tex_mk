@@ -1,0 +1,5 @@
+cd ../../sample/bibtex
+make -s distclean >/dev/null
+make -s all
+make -s bib-update
+make -s all

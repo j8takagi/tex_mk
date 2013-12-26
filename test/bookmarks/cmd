@@ -1,0 +1,3 @@
+cd ../../sample/bookmarks
+make -s distclean >/dev/null
+make -s all

@@ -1,0 +1,5 @@
+cd ../../sample/makeindex
+make -s distclean
+make -s all
+make -s index-update
+make -s all
