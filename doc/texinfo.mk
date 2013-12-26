@@ -26,6 +26,7 @@ endif
 # TeX commands
 DVIPDFMX := dvipdfmx
 TEX := ptex
+MAKEINDEX := makeindex
 
 # TeX command option flags
 DVIPDFMX_FLAGS :=

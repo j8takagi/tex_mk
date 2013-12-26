@@ -1,12 +1,25 @@
 # HTMLファイルで使うCSSファイルを指定
 CSS := style.css
 
+TEX := ptex
+TEXINDEX := texindex
+
 # General commands
 SED := sed
 
 .PHONY: all clean distclean
 
 TEXITARGETS := tex_mk.html tex_mk.pdf
+
+tex_mk.dvi: tex_mk.texi tex_mk.cps
+	$(TEX) $<
+
+tex_mk.cps: tex_mk.texi
+	$(CP) $@ $@_prev
+	$(TEX) $<
+	$(TEXINDEX) $(subst .texi,.cp,$<)
+	$(TEX) $<
+	$(TEXINDEX) $(subst .texi,.cp,$<)
 
 all: $(TEXITARGETS)
 

@@ -40,6 +40,22 @@ Copyright @copyright{} 2013 j8takagi
 
 @node About, Usage, Top, Top
 @chapter 概要
+
+@cindex @file{tex.mk}
+@cindex @TeX {}
+@cindex @LaTeX {}
+@cindex GNU Make
+@cindex @command{make}
+@cindex 画像
+@cindex @command{\input}
+@cindex @command{\include}
+@cindex 目次
+@cindex 画像リスト
+@cindex 表リスト
+@cindex 索引
+@cindex BiBTeX
+@cindex 文献リスト
+
 tex.mkは、 @TeX{} および@LaTeX{} でのドキュメント作成時に必要な、@file{.tex}ファイルからPDFなどを生成する作業を自動化するためのツールです。tex.mkは、GNU Make スクリプトとして実装されています。
 
 tex.mkが設定されている場合、@file{.tex}ファイルがあるディレクトリーで@command{make} コマンドを実行するだけで@TeX{} ドキュメントが生成されます。また、tex.mkは次のような@TeX{} ドキュメントに対応しています。
@@ -49,7 +65,7 @@ tex.mkが設定されている場合、@file{.tex}ファイルがあるディレ
 画像を含むドキュメント
 
 @item
-別の@LaTeX{} ドキュメントを含む@LaTeX{} ドキュメント
+@command{\input}や@command{\include}命令により、別の@LaTeX{} ドキュメントが挿入された@LaTeX{} ドキュメント
 
 @item
 目次や画像リスト・表リストを含む@LaTeX{} ドキュメント
@@ -75,13 +91,32 @@ BiBTeX で作成する文献リストを含む@LaTeX{} ドキュメント
 @section 動作環境
 
 @subsection OS
-UNIX系のOSでの動作を想定しています。現在、Ubuntu Linux 12.04 と Mac OS X Marvericks で動作を確認しています。
+@cindex OS
+@cindex UNIX
+@cindex 動作環境
+@cindex Mac OS X
+@cindex Linux
+@cindex Ubuntu Linux 12.04
+@cindex Mac OS X Marvericks
+
+動作環境は、LinuxやMac OS XなどのUNIX系のOSを想定しています。現在、Ubuntu Linux 12.04 と Mac OS X Marvericks で動作を確認しています。
 
 @subsection ツール
+@cindex GNU Make
+@cindex sed
+@cindex Linux
+@cindex Mac OS X
+@cindex XCode
+@cindex コマンドラインツール
+
 GNU Makeと、sedなどUNIX系OS用のコマンドツールが必要です。Linuxでは多くの場合、初期状態で必要なツールがインストールされています。Mac OS X では、XCodeのコマンドラインツールをインストールすることで、GNU Makeがインストールされます。なお、Makefile以外のコマンドツールは、GNU版以外でも動作します。
 
 @node Creation, Clean, Environment, Usage
-@section PDFファイルの作成
+@section PDFの作成
+@cindex PDF
+@cindex @file{Makefile.template}
+@cindex @file{Makefile}
+
 tex.mkを使ってPDFファイルを作成する手順は次のとおりです。
 
 @enumerate
@@ -95,6 +130,14 @@ tex.mkを使ってPDFファイルを作成する手順は次のとおりです�
 @item
 @file{.tex} ソースファイルのディレクトリーで、@file{make} を実行
 @end enumerate
+
+@subsection 中間ファイル
+@cindex 中間ファイル
+
+PDFファイルを生成する場合は、@TeX{} の中間ファイル（@file{.aux}や@file{.toc}、@file{.out}）とともに、tex.mkによる中間ファイル（@file{report.d}や@file{report.toc_prev}、@file{report.out_prev}）が生成されます。
+
+これらの中間ファイルを削除せず残しておけば、次回@file{report.tex} を変更して@file{make}を実行するときの実行時間を短縮できます。
+削除しても、中間ファイルは再度@file{make} を実行すると再作成されるので、PDFなどを正常に作成できなくなることはありません。
 
 @subsection 例
 
@@ -128,15 +171,17 @@ dvipdfmx report.dvi
 @end example
 @end enumerate
 
-PDFファイル生成に成功した場合は、@TeX{} の中間ファイル（@file{.aux}や@file{.toc}、@file{.out}）とともに、tex.mkによる中間ファイル（@file{report.d}や@file{report.toc_prev}、@file{report.out_prev}）が生成されます。
-
-これらの中間ファイルを削除せず残しておけば、次回@file{report.tex} を変更して@file{make}を実行するときの実行時間を短縮できます。
-削除しても、中間ファイルは再度@file{make} を実行すると再作成されるので、PDFなどを正常に作成できなくなることはありません。
-
 @node Clean, Sample, Creation, Usage
 @section 不要ファイルの削除
 
+@cindex 不要ファイル
+@cindex 削除
+
 @subsection 中間ファイルの削除
+
+@cindex 中間ファイル
+@cindex 削除
+
 @file{make}で生成された中間ファイルを削除するには、次の@file{make}コマンドを実行します。
 
 @example
@@ -145,7 +190,11 @@ $ @kbd{make tex-clean}
 
 @file{Makefile.template} をコピーして@file{Makefile}を作成するなど@file{Makefile}で設定されている場合は、@file{make tex-clean} のかわりに @file{make clean} を実行することができます。
 
-@subsection PDFファイルの削除
+@subsection PDFの削除
+
+@cindex PDF
+@cindex 削除
+
 PDFファイルも含めて@file{make}で生成されたすべてのファイルを削除するには、次の@file{make}コマンドを実行します。
 
 @example
@@ -156,11 +205,18 @@ $ @kbd{make tex-distclean}
 
 @node Sample,  , Clean, Usage
 @section サンプル
+@cindex サンプル
+@cindex @file{sample}ディレクトリー
+
 パッケージの @file{sample}ディレクトリーの中にある各ディレクトリーに、tex.mk で処理可能な@file{.tex}サンプルファイルを
 格納しています。
 
 @node Settings,  , Usage, Top
 @chapter 設定
+@cindex @file{Makefile}
+@cindex @file{Makefile.template}
+@cindex @command{\include}
+@cindex @command{\input}
 
 tex.mkを使うための設定は基本的に、@file{Makefile} ファイルで行います。@file{Makefile.template} をコピーして@file{Makefile}を作成した場合、@file{Makefile}は次の内容になります。
 
@@ -216,6 +272,8 @@ TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAIN).tex))
 TEXTARGETS := $(subst .tex,.pdf,$(wildcard $(TEXMAIN).tex))
 @end example
 
+または、
+
 @example
 @kbd{TEXTARGETS := report1.pdf report2.pdf}
 @end example
@@ -245,5 +303,11 @@ clean: tex-clean
 
 distclean: clean tex-distclean
 @end example
+
+@iftex
+@appendix 索引
+
+@printindex cp
+@end iftex
 
 @bye
