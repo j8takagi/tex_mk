@@ -59,13 +59,11 @@ TEST_LOG_FILES := $(foreach test,$(TESTS),$(test)/$(LOG_FILE))
 define group_log
     $(if $(filter 1,$(verbose)),$(ECHO) '$(CURDIR) - $(words $1) tests')
     $(foreach target,$1,$(call group_log_each,$(target),$2))
-    $(if $(filter 1,$(verbose)),$(ECHO))
 endef
 
 # テストのログファイルをグループログファイルに出力。引数は、テスト、グループログファイル
 # 用例: $(call group_log_each,file_test_log,file_group_log)
 define group_log_each
-    $(if $(filter 1,$(verbose)),$(PRINTF) '.')
     $(ECHO) $(dir $1) >>$2;
     if test -s $1; then $(CAT) $1 >>$2; else $(ECHO) $(dir $1)": no log" >>$2; fi
     $(ECHO) >>$2;
@@ -90,8 +88,7 @@ TEST_VALGRIND_FILES := $(foreach test,$(TESTS),$(test)/$(VALGRIND_FILE))
 # 引数は、グループ名、グループログファイル、グループレポートファイル
 # 用例: $(call group_report,name,file_log,file_report)
 define group_report
-    $(ECHO) '$1: $(SUCCESS_TEST) / $(ALL_TEST) tests passed.' >$3
-    $(GREP) -n 'Fail' $(GROUP_DIR)/$2 | while $(READ) line; do $(ECHO) "$(GROUP_DIR)/$2: $${line}"; done
+    $(ECHO) '$1: $(SUCCESS_TEST) / $(ALL_TEST) tests passed. Details in $(GROUP_DIR)/$2' >$3
     if test $(FAIL_TEST) -eq 0; then $(ECHO) "$1: All tests are succeded." >>$3; fi
 endef
 
@@ -124,8 +121,6 @@ create:
 clean:
 	@$(call make_targets,$(TESTS),$@)
 	@$(RM) $(GROUP_RES_FILES);
-
-distclean: clean
 
 time-clean:
 	@$(call make_targets,$(TESTS),$@)

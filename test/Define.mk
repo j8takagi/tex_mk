@@ -4,17 +4,17 @@
 ifndef DEFINE_INCLUDED
 DEFINE_INCLUDED = 1
 
-# 現在の日時
-DATE = $(shell date +"%F %T")
-
-# Makefile
-MAKEFILE := Makefile
-
 # シェルコマンドをデバッグするときは、DEBUGSH変数を設定してmakeを実行する
 # 例: DEBUGSH=1 make
 ifdef DEBUGSH
   SHELL := /bin/sh -x
 endif
+
+# 現在の日時
+DATE = $(shell date +"%F %T")
+
+# Makefile
+MAKEFILE := Makefile
 
 ######################################################################
 # コマンド
@@ -29,18 +29,14 @@ ECHO := echo
 EXPR := expr
 FIND := find
 GREP := grep
-HEAD := head
 LINECOUNT := wc -l
 LN := ln -s
 MKDIR := mkdir -p
 MV := mv
-PRINTF := /usr/bin/printf
-READ := read
 SED := sed
 TIME := time
 TR := tr
 VALGRIND := valgrind
-
 VALGRINDFLAG :=  -q --leak-check=full --log-file=valgrind.log
 
 ######################################################################
